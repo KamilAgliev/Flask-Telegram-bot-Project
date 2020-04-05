@@ -7,16 +7,18 @@ from flask_login import LoginManager, login_user, current_user, logout_user, \
     login_required
 from flask_restful import Resource, Api, reqparse
 from flask_wtf import FlaskForm
-from requests import post
+from requests import post, get
 from werkzeug.exceptions import abort
 from werkzeug.utils import redirect
 from wtforms import PasswordField, BooleanField, SubmitField, StringField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 from flask import make_response
+
+import flask_server
 from data import db_session
 from data.users import User
-from flask_server import RegisterForm, logout, log_user
+from flask_server import RegisterForm
 from resources import users_resources
 
 from data.auth import TOKEN_FOR_TELEGRAM_BOT
@@ -25,12 +27,14 @@ from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
 from telegram.ext import CallbackContext, CommandHandler
 from data.auth import sessionStorage
 
+current_user = None
+
 
 def register(update, context):
     mes = update.message.text
     user_id = update.message.from_user.id
-    if user_id in sessionStorage.keys() and sessionStorage[user_id]['has_account'] and sessionStorage[user_id][
-        'register_stage'] == 7 and sessionStorage[user_id]["reg_ended"]:
+    res = get(f"http://127.0.0.1:5000/api/users/{user_id}").json()
+    if res["message"] == 'ok':
         update.message.reply_text("У вас уже есть аккаунт!")
         sessionStorage[user_id]["login_stage"] = 0
         return login(update, context)
@@ -51,10 +55,16 @@ def register(update, context):
             if stage == 2:
                 sessionStorage[user_id]["reg_form"].surname = mes
             if stage == 3:
+                if "@" not in mes:
+                    update.message.reply_text("email должен содержать символ '@' !")
+                    return 1
                 sessionStorage[user_id]["reg_form"].email = mes
             if stage == 4:
                 sessionStorage[user_id]["reg_form"].password = mes
             if stage == 5:
+                if mes != sessionStorage[user_id]["reg_form"].password:
+                    update.message.reply_text("Пароли должны совпадать!")
+                    return 1
                 sessionStorage[user_id]["reg_form"].password_again = mes
             if stage == 6:
                 sessionStorage[user_id]["reg_form"].age = int(mes)
@@ -64,6 +74,7 @@ def register(update, context):
     sessionStorage[user_id]["reg_form"].address = mes
     data = sessionStorage[user_id]["reg_form"]
     res = post('http://127.0.0.1:5000/api/users', json={
+        'id': user_id,
         'name': data.name,
         'surname': data.surname,
         'email': data.email,
@@ -74,6 +85,7 @@ def register(update, context):
     print(res)
     sessionStorage[user_id]["login_stage"] = 0
     sessionStorage[user_id]["reg_ended"] = True
+    update.message.reply_text("Вы успешно зарегестрированы!")
     return login(update, context)
 
 
@@ -86,40 +98,60 @@ def login(update, context):
         return 2
     else:
         given_email, given_password = mes.split()
-        connect = db_session.create_session()
-        user = connect.query(User).filter(User.email == given_email).first()
-        if user and user.check_password(given_password):
-            log_user(user)
-            sessionStorage[user_id]['login_stage'] = 0
-            return login(update, context)
+        res = get(f"http://127.0.0.1:5000/api/users/{user_id}").json()
+        if res['message'] == "ok":
+            ses = db_session.create_session()
+            user = ses.query(User).filter(User.id == user_id).first()
+            if user and user.check_password(given_password):
+                global current_user
+                current_user = user
+                sessionStorage[user_id]['login_stage'] = 0
+                return learning(update, context)
+            else:
+                update.message.reply_text(
+                    "Введены неправильные данные, \n скорее всего ошибка в пароле, \n введите данные ещё раз")
+                return 2
         else:
-            update.message.reply_text("Введены неправильные данные, попробуйте ещё раз")
+            update.message.reply_text(
+                "Введены неправильные данные, \n проверьте логин и пароль, \n и введите ещё раз")
             return 2
 
 
 def start(update, context):
     user_id = update.message.from_user.id
-    if user_id not in sessionStorage.keys():
+    res = get(f"http://127.0.0.1:5000/api/users/{user_id}").json()
+    if res["message"] == 'ok':
+        update.message.reply_text(
+            "Здравствуйте, это бот "
+            "для изучения английского языка, \n"
+            "для продолжения авторизуйтесь")
+        if user_id not in sessionStorage.keys():
+            sessionStorage[user_id] = {
+                'login_stage': 0
+            }
+        return login(update, context)
+    else:
         update.message.reply_text(
             "Здравствуйте, это бот "
             "для изучения английского языка, \n"
             "для начала вам нужно зарегистрироваться")
         return register(update, context)
-    else:
-        update.message.reply_text(
-            "Здравствуйте, это бот "
-            "для изучения английского языка, \n"
-            "для продолжения авторизуйтесь")
-        sessionStorage[user_id]['login_stage'] = 0
-        return login(update, context)
 
 
 def learning(update, context):
-    update.message.reply_text("Вы успешно зашли в свой аккаунт, теперь вы можете использовать весь функционал бота")
+    update.message.reply_text("Вы успешно зашли в свой аккаунт, \n теперь вы можете использовать весь функционал бота")
+    return ConversationHandler.END
+
+
+def logout(update, context):
+    update.message.reply_text("Вы вышли из аккаунта, чтобы начать работы выполните команду /start")
+    global current_user
+    current_user = None
     return ConversationHandler.END
 
 
 if __name__ == "__main__":
+    db_session.global_init("db/baza.db")
     REQUEST_KWARGS = {
         'proxy_url': 'socks5://localhost:9150',  # Адрес прокси сервера
     }

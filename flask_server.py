@@ -18,15 +18,20 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-
 @login_manager.user_loader
 def load_user(user_id):
     session = db_session.create_session()
     return session.query(User).get(user_id)
 
 
-def log_user(user):
-    load_user(user)
+def log_user(user_id, given_password):
+    ses = db_session.create_session()
+    user = ses.query(User).filter(User.id == user_id).first()
+    if user and user.check_password(given_password):
+        load_user(user.id)
+        return jsonify({"message": 'ok'})
+    else:
+        return jsonify({"message": "something wrong"})
 
 
 @login_required
@@ -35,8 +40,8 @@ def logout():
 
 
 class RegisterForm:
-    stages = ["Введите своё имя", "Введите свою фамилию", "Введите ваш email", "Введите пароль от аккаунта",
-              "Повторите пароль от аккаунта", "Введите свой возраст", "Введите ваш адрес"]
+    stages = ["Введите своё имя", "Введите свою фамилию", "Введите ваш email", "Придумайте пароль от аккаунта",
+              "Повторите пароль от аккаунта", "Введите свой возраст", "Введите ваш адрес проживания"]
 
     def __init__(self):
         self.surname = ""
@@ -58,31 +63,27 @@ class RegisterForm:
             return "Пароли не совпадают!"
 
 
-def abort_if_user_not_found(user_id):
-    session = db_session.create_session()
-    users = session.query(User).get(user_id)
-    if not users:
-        abort(404, message=f"Users {user_id} not found")
-
-
 class UsersResource(Resource):
     def get(self, user_id):
-        abort_if_user_not_found(user_id)
         session = db_session.create_session()
-        user = session.query(User).get(user_id)
-        return jsonify({'users': user.to_dict()})
+        user = session.query(User).filter(User.id == user_id).first()
+        if not user:
+            return jsonify({"message": "such user does not exist"})
+        return jsonify({'user_data': user.to_dict(), "message": "ok"})
 
     def delete(self, user_id):
-        abort_if_user_not_found(user_id)
         session = db_session.create_session()
-        user = session.query(User).get(user_id)
+        user = session.query(User).filter(User.id == user_id).first()
+        if not user:
+            return jsonify({"message": "such user does not exist"})
         session.delete(user)
         session.commit()
-        return jsonify({'success': 'OK - user deleted'})
+        return jsonify({'message': 'ok'})
 
 
 class UsersListResource(Resource):
     parser = reqparse.RequestParser()
+    parser.add_argument('id', required=True, type=int)
     parser.add_argument('surname', required=True)
     parser.add_argument('name', required=True)
     parser.add_argument('age', required=True, type=int)
@@ -99,6 +100,7 @@ class UsersListResource(Resource):
         args = UsersListResource.parser.parse_args()
         session = db_session.create_session()
         user = User(
+            id=args['id'],
             surname=args['surname'],
             name=args['name'],
             age=args['age'],
