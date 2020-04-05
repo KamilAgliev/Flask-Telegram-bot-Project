@@ -18,6 +18,7 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     session = db_session.create_session()
@@ -41,7 +42,8 @@ def logout():
 
 class RegisterForm:
     stages = ["Введите своё имя", "Введите свою фамилию", "Введите ваш email", "Придумайте пароль от аккаунта",
-              "Повторите пароль от аккаунта", "Введите свой возраст", "Введите ваш адрес проживания"]
+              "Повторите пароль от аккаунта", "Введите свой возраст", "Введите ваш адрес проживания",
+              "Кто вы ученик/учитель"]
 
     def __init__(self):
         self.surname = ""
@@ -51,6 +53,7 @@ class RegisterForm:
         self.password_again = ""
         self.age = -1
         self.address = ""
+        self.position = ""
 
     def validate_on_submit(self):
         s = db_session.create_session()
@@ -90,6 +93,7 @@ class UsersListResource(Resource):
     parser.add_argument('address', required=True)
     parser.add_argument('email', required=True)
     parser.add_argument('password', required=True)
+    parser.add_argument('position', required=True)
 
     def get(self):
         session = db_session.create_session()
@@ -106,6 +110,7 @@ class UsersListResource(Resource):
             age=args['age'],
             address=args['address'],
             email=args['email'],
+            position=args['position']
         )
         user.set_password(args['password'])
         session.add(user)
