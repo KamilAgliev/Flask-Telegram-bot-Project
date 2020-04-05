@@ -103,8 +103,7 @@ def login(update, context):
             ses = db_session.create_session()
             user = ses.query(User).filter(User.id == user_id).first()
             if user and user.check_password(given_password):
-                global current_user
-                current_user = user
+                sessionStorage[user_id]['auth'] = True
                 sessionStorage[user_id]['login_stage'] = 0
                 return learning(update, context)
             else:
@@ -144,9 +143,9 @@ def learning(update, context):
 
 
 def logout(update, context):
+    user_id = update.message.from_user.id
     update.message.reply_text("Вы вышли из аккаунта, чтобы начать работы выполните команду /start")
-    global current_user
-    current_user = None
+    sessionStorage[user_id]['auth'] = False
     return ConversationHandler.END
 
 
