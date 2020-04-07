@@ -14,8 +14,6 @@ from wtforms import PasswordField, BooleanField, SubmitField, StringField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 from flask import make_response
-
-import flask_server
 from data import db_session
 from data.users import User
 from flask_server import RegisterForm
@@ -42,7 +40,6 @@ def register(update, context):
                 'has_account': True,
                 "register_stage": 0,
                 "reg_form": form,
-                "reg_ended": False,
             }
     stage = sessionStorage[user_id]['register_stage']
     if stage != len(RegisterForm.stages):
@@ -87,11 +84,11 @@ def register(update, context):
         'password': data.password,
         'address': data.address,
         'age': data.age,
-        'aim': data.aim
+        'aim': data.aim,
+        'telegram_name': update.message.from_user.username,
     }).json()
     print(res)
     sessionStorage[user_id]["login_stage"] = 0
-    sessionStorage[user_id]["reg_ended"] = True
     update.message.reply_text("Вы успешно зарегестрированы!")
     return login(update, context)
 
@@ -110,7 +107,6 @@ def login(update, context):
             ses = db_session.create_session()
             user = ses.query(User).filter(User.id == user_id).first()
             if user and user.check_password(given_password):
-                sessionStorage[user_id]['auth'] = True
                 sessionStorage[user_id]['login_stage'] = 0
                 return learning(update, context)
             else:
@@ -145,15 +141,50 @@ def start(update, context):
 
 
 def learning(update, context):
-    update.message.reply_text("Вы успешно зашли в свой аккаунт, \n теперь вы можете использовать весь функционал бота")
+    update.message.reply_text("Вы зашли в личный кабинет,"
+                              "\nЧтобы узнать все команды наберите /help")
     return 3
 
 
 def logout(update, context):
-    user_id = update.message.from_user.id
-    update.message.reply_text("Вы вышли из аккаунта, чтобы начать работы выполните команду /start")
-    sessionStorage[user_id]['auth'] = False
+    update.message.reply_text("Вы вышли из аккаунта, чтобы начать работу выполните команду /start")
     return ConversationHandler.END
+
+
+def learning_help(update, context):
+    from data.commands import commands
+    text = """"""
+    for com in commands:
+        text += com + '\n'
+    update.message.reply_text(text)
+    return 3
+
+
+def get_other_links(update, context):
+    from data.english_data import other_links
+    user_id = update.message.from_user.id
+    mes = update.message.text
+    if mes == 'стоп':
+        sessionStorage[user_id]['get_links_stage'] = 0
+        return learning(update, context)
+    if 'get_links_stage' not in sessionStorage[user_id].keys():
+        sessionStorage[user_id]['get_links_stage'] = 0
+    titles_mes = "Что вы хотите посмотреть? (введите строго нужный текст) " \
+                 "\nЧтобы завершить просмотр ссылок введите 'стоn'"
+    if sessionStorage[user_id]['get_links_stage'] == 0:
+        for link in other_links:
+            titles_mes += "\n" + link['title']
+        sessionStorage[user_id]['get_links_stage'] = 1
+        update.message.reply_text(titles_mes)
+        return 4
+    else:
+        for link in other_links:
+            if link['title'] == mes:
+                update.message.reply_text(f"""Вот ваш запрос на {link['title']}: 
+                                            \n{link['url']}""")
+                return 4
+    update.message("Пожалуйста введите правильные данные!")
+    return 4
 
 
 if __name__ == "__main__":
@@ -172,7 +203,11 @@ if __name__ == "__main__":
             # авторизация
             2: [MessageHandler(Filters.text, login)],
             # пользователь в MYENG
-            3: [CommandHandler("logout", logout), MessageHandler(Filters.text, learning)],
+            3: [CommandHandler("logout", logout),
+                CommandHandler("get_other_links", get_other_links),
+                CommandHandler("help", learning_help),
+                MessageHandler(Filters.text, learning)],
+            4: [MessageHandler(Filters.text, get_other_links)]  # other links
         }
     )
     dp.add_handler(conv_handler)
