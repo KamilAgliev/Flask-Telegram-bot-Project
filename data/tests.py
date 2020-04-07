@@ -12,7 +12,5 @@ class Test(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     theme = sqlalchemy.Column(sqlalchemy.String)  # тема теста
-    making_student = orm.relation("Student")  # ученик, который делал тест
     result = sqlalchemy.Column(sqlalchemy.INTEGER)  # результат прохождения теста (кол во прав ответов)
-    made_time = sqlalchemy.Column(sqlalchemy.String) # время когда был сделан тест (Unix time)
-    questions = orm.relation("Question")
+    questions = orm.relation("Question", back_populates="test")

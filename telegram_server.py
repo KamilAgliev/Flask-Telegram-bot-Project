@@ -74,10 +74,10 @@ def register(update, context):
         update.message.reply_text(RegisterForm.stages[stage])
         sessionStorage[user_id]['register_stage'] += 1
         return 1
-    if mes not in ["учитель", "ученик"]:
-        update.message.reply_text("Введите либо учитель, либо ученик")
+    if mes not in ['путешествия', 'бизнес', 'разговорный']:
+        update.message.reply_text("Выберите одно из предложенных направлений! (путешествия, бизнес, разговорный)")
         return 1
-    sessionStorage[user_id]["reg_form"].position = mes
+    sessionStorage[user_id]["reg_form"].aim = mes
     data = sessionStorage[user_id]["reg_form"]
     res = post('http://127.0.0.1:5000/api/users', json={
         'id': user_id,
@@ -87,7 +87,7 @@ def register(update, context):
         'password': data.password,
         'address': data.address,
         'age': data.age,
-        'position': data.position
+        'aim': data.aim
     }).json()
     print(res)
     sessionStorage[user_id]["login_stage"] = 0

@@ -12,4 +12,8 @@ class Question(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     theme = sqlalchemy.Column(sqlalchemy.String)  # тема вопроса
-    test = orm.relation("Test", back_populates="question")
+    text = sqlalchemy.Column(sqlalchemy.String)  # сам вопрос
+    answer = sqlalchemy.Column(sqlalchemy.String)  # ответ на вопрос
+    test_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                sqlalchemy.ForeignKey("tests.id"))
+    test = orm.relation("Test")
