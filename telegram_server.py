@@ -7,7 +7,7 @@ from flask_login import LoginManager, login_user, logout_user, \
     login_required
 from flask_restful import Resource, Api, reqparse
 from flask_wtf import FlaskForm
-from requests import post, get
+from requests import post, get, delete
 from werkzeug.exceptions import abort
 from werkzeug.utils import redirect
 from wtforms import PasswordField, BooleanField, SubmitField, StringField
@@ -28,7 +28,7 @@ from data.auth import sessionStorage
 def register(update, context):
     mes = update.message.text
     user_id = update.message.from_user.id
-    res = get(f"http://127.0.0.1:5000/api/users/{user_id}").json()
+    res = get(f"http://localhost:5000/api/users/{user_id}").json()
     if res["message"] == 'ok':
         update.message.reply_text("У вас уже есть аккаунт!")
         sessionStorage[user_id]["login_stage"] = 0
@@ -37,7 +37,6 @@ def register(update, context):
         if user_id not in sessionStorage.keys():
             form = RegisterForm()
             sessionStorage[user_id] = {
-                'has_account': True,
                 "register_stage": 0,
                 "reg_form": form,
             }
@@ -71,12 +70,13 @@ def register(update, context):
         update.message.reply_text(RegisterForm.stages[stage])
         sessionStorage[user_id]['register_stage'] += 1
         return 1
-    if mes not in ['путешествия', 'бизнес', 'разговорный']:
-        update.message.reply_text("Выберите одно из предложенных направлений! (путешествия, бизнес, разговорный)")
+    if mes not in ['путешествия', 'для работы за границей', 'разговорный']:
+        update.message.reply_text(
+            "Выберите одно из предложенных направлений! (путешествия, для работы за границей, разговорный)")
         return 1
     sessionStorage[user_id]["reg_form"].aim = mes
     data = sessionStorage[user_id]["reg_form"]
-    res = post('http://127.0.0.1:5000/api/users', json={
+    res = post('http://localhost:5000/api/users', json={
         'id': user_id,
         'name': data.name,
         'surname': data.surname,
@@ -90,7 +90,7 @@ def register(update, context):
     print(res)
     sessionStorage[user_id]["login_stage"] = 0
     update.message.reply_text("Вы успешно зарегестрированы!")
-    return login(update, context)
+    return learning(update, context)
 
 
 def login(update, context):
@@ -102,7 +102,7 @@ def login(update, context):
         return 2
     else:
         given_email, given_password = mes.split()
-        res = get(f"http://127.0.0.1:5000/api/users/{user_id}").json()
+        res = get(f"http://localhost:5000/api/users/{user_id}").json()
         if res['message'] == "ok":
             ses = db_session.create_session()
             user = ses.query(User).filter(User.id == user_id).first()
@@ -121,7 +121,7 @@ def login(update, context):
 
 def start(update, context):
     user_id = update.message.from_user.id
-    res = get(f"http://127.0.0.1:5000/api/users/{user_id}").json()
+    res = get(f"http://localhost:5000/api/users/{user_id}").json()
     if res["message"] == 'ok':
         update.message.reply_text(
             "Здравствуйте, это бот "
@@ -141,7 +141,7 @@ def start(update, context):
 
 
 def learning(update, context):
-    update.message.reply_text("Вы зашли в личный кабинет,"
+    update.message.reply_text("Вы снова в личном кабинете,"
                               "\nЧтобы узнать все команды наберите /help")
     return 3
 
@@ -154,7 +154,7 @@ def logout(update, context):
 def learning_help(update, context):
     from data.commands import commands
     text = """"""
-    for com in commands:
+    for com in commands['learning_menu']:
         text += com + '\n'
     update.message.reply_text(text)
     return 3
@@ -187,6 +187,94 @@ def get_other_links(update, context):
     return 4
 
 
+def get_people_to_chat(update, context):
+    update.message.reply_text("Вот люди, с которыми с ты можешь пообщаться"
+                              "\n(не удивляетесь своему имени),"
+                              "\nнайди их по никнейму, добавив в начало поиска '@'")
+    res = get("http://localhost:5000/api/users").json()
+    text = ""
+    for i in range(len(res['users'])):
+        if res['users'][i].id != update.message.from_user.id:
+            text += str(i + 1) + '. ' + res['users'][i]['telegram_name']
+    update.message.reply_text(text)
+    return 3
+
+
+def get_lesson(update, context):
+    user_id = update.message.from_user.id
+    mes = update.message.text
+
+    if 'lesson_stage' not in sessionStorage[user_id].keys():
+        sessionStorage[user_id]['lesson_stage'] = 0
+        sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+    if sessionStorage[user_id]['lesson_stage'] == 0:
+        update.message.reply_text(
+            f"На данный момент вы изучаете этот раздел: {sessionStorage[user_id]['user_data']['aim']}"
+            "Чтобы узнать команды введите /help_in_lesson")
+        return 5
+
+
+def help_in_lesson(update, context):
+    from data.commands import commands
+    text = """"""
+    for com in commands['lesson_menu']:
+        text += com + '\n'
+    update.message.reply_text(text)
+    return 5
+
+
+def change_aim(update, context):
+    user_id = update.message.from_user.id
+    mes = update.message.text
+    from data.english_data import WORDS_FOR_LEARNING
+    user_data = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+    if 'change_aim_stage' not in sessionStorage[user_id].keys():
+        sessionStorage[user_id]['change_aim_stage'] = 0
+        sessionStorage[user_id]['other_themes'] = {'путешествия': 1, 'для работы за границей': 1, 'разговорный': 1}
+        sessionStorage[user_id]['other_themes'][user_data['aim']] = 0
+    if sessionStorage[user_id]['change_aim_stage'] == 0:
+        if (len(WORDS_FOR_LEARNING[user_data['aim']]['themes']) + 1) // 2 > user_data['curr_lesson']:
+            text = "\nВы изучили не так много в этом разделе," \
+                   "\nподумайте хорошо перед решением."
+        else:
+            text = "\nВы уже изучили достаточно в этом разделе," \
+                   "\nсамое время перейти в другой!"
+            text += '\n'
+        a, b = None, None
+        for key in sessionStorage[user_id]['other_themes'].keys():
+            if sessionStorage[user_id]['other_themes'][key] == 1:
+                if a is None:
+                    a = key
+                else:
+                    b = key
+        text += f'\nВыберите одно из других направлений \n({a}, {b})'
+        update.message.reply_text(text)
+        sessionStorage[user_id]['change_aim_stage'] += 1
+        return 6
+    else:
+        if mes not in ['путешествия', 'для работы за границей', 'разговорный']:
+            update.message.reply_text("Пожалуйста введите правильые данные"
+                                      "\n(путешествия, для работы за границей, разговорный)")
+            return 6
+        else:
+            deliting = delete(f"http://localhost:5000/api/users/{user_id}").json()
+            print(deliting)
+            res = post('http://localhost:5000/api/users', json={
+                'id': user_id,
+                'name': user_data['name'],
+                'surname': user_data['surname'],
+                'email': user_data['email'],
+                'password': user_data['password'],
+                'address': user_data['address'],
+                'age': user_data['age'],
+                'aim': mes,
+                'telegram_name': update.message.from_user.username,
+            }).json()
+            print(res)
+            update.message.reply_text("Ваша раздел изучения успешно обновлён!")
+            return learning(update, context)
+
+
 if __name__ == "__main__":
     db_session.global_init("db/baza.db")
     REQUEST_KWARGS = {
@@ -205,9 +293,15 @@ if __name__ == "__main__":
             # пользователь в MYENG
             3: [CommandHandler("logout", logout),
                 CommandHandler("get_other_links", get_other_links),
+                CommandHandler("get_people_to_chat", get_people_to_chat),
                 CommandHandler("help", learning_help),
+                CommandHandler("get_lesson", get_lesson),
+                CommandHandler("change_aim", change_aim),
                 MessageHandler(Filters.text, learning)],
-            4: [MessageHandler(Filters.text, get_other_links)]  # other links
+            4: [MessageHandler(Filters.text, get_other_links)],  # other links
+            5: [MessageHandler(Filters.text, get_other_links),
+                CommandHandler('help_in_lesson', help_in_lesson)],  # lesson
+            6: [MessageHandler(Filters.text, change_aim)]
         }
     )
     dp.add_handler(conv_handler)

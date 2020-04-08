@@ -13,10 +13,13 @@ from requests import get, delete, post, put
 #                  'address': 'Almet'}, ).json())
 # Правильный запрос
 print(post('http://127.0.0.1:5000/api/users', json={
+    'id': 12,
     'name': 'Almaz',
     'surname': 'Almazov',
     'email': 'almaz@mail.ru',
     'password': 'test',
     'address': 'Almet',
-    "age": 34
+    "age": 34,
+    "aim": "путешествия",
+    "telegram_name": "almaz_almazov"
 }).json())

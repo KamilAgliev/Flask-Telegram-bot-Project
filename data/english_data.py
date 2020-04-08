@@ -1,5 +1,5 @@
 WORDS_FOR_LEARNING = {
-    'Путешествия': {
+    'путешествия': {
         "inception": "Знакомство с новой страной нередко начинается с аэропорта, продолжается отелем"
                      "Также есть много других очень важных тем для путешественника: "
                      "1.пригодятся во время регистрации на рейс и по прилете.",
@@ -77,7 +77,8 @@ WORDS_FOR_LEARNING = {
                               ['pets allowed ', 'можно останавливаться с животными'],
                               ['check-in time ', 'время заезда'],
                               ['check-out time ', 'время выезда']],
-                    "exsamples": [], "description": "",
+                    "exsamples": [],
+                    "description": "",
                     },
                    {"title": "Исследуем город",
                     "youtude_title": "Как быть в иностранном городе",
@@ -160,8 +161,7 @@ WORDS_FOR_LEARNING = {
                     "youtube_urls": ["https://www.youtube.com/watch?v=ZObNbpRhpGc"],
                     "words": [
                         ['I’ve booked a table. ', 'Я бронировал столик.'],
-                        ['Do you have any free tables? I need a table for two. ',
-                         'У вас есть свободные столики? Мне нужен столик на двоих.'],
+                        ['Do you have any free tables? I need a table for two. ', 'У вас есть свободные столики? Мне нужен столик на двоих.'],
                         ['May I sit here? ', 'Я могу сесть здесь?'],
                         ['Can I get a table by the window? ', 'Можно мне столик у окна?'],
                         ['Could we get an extra chair? ', 'Можно нам еще один стул?'],
@@ -203,8 +203,7 @@ WORDS_FOR_LEARNING = {
                     "youtude_title": "Английский для туристов в магазине",
                     "youtube_urls": ["https://www.youtube.com/watch?v=t4hHFNWjtk4",
                                      'https://www.youtube.com/watch?v=LLpnmrbjnjI'],
-                    "words": [['Where is the nearest souvenir shop / shopping mall / market? ',
-                               'Где находится ближайший сувенирный магазин / торговый центр / рынок?'],
+                    "words": [['Where is the nearest souvenir shop / shopping mall / market? ',   'Где находится ближайший сувенирный магазин / торговый центр / рынок?'],
                               ['Sorry, can you help me, please? ', 'Прошу прощения, вы можете мне помочь?'],
                               ['How much is it? ', 'How much is it?'],
                               ['How much does it cost? ', 'Сколько это стоит?'],
@@ -236,7 +235,7 @@ WORDS_FOR_LEARNING = {
         'conclusion': "Английский для путешественника состоит из многих аспектов,"
                       " но какая бы зубрёжка не было, стоит один раз съездаить и на практике узнать,"
                       " что такое путешествие в иностранную страну!",
-    }, 'бизнес': {
+    }, 'для работы за границей': {
         "inception": "Английский язык – это не только разговорная речь."
                      " Изучая язык, мы учим не только разговорную речь,"
                      " но и деловую лексику. Business English нужен каждому человеку,"
@@ -435,7 +434,7 @@ WORDS_FOR_LEARNING = {
 }
 other_links = [
     {"title": "1000 слов на английском - 80 % английского",
-     "url": ["https://speakenglishwell.ru/1000-slov-na-anglijskom-kotorye-nuzhno-znat-nachinayushhim/"],
+     "url": "https://speakenglishwell.ru/1000-slov-na-anglijskom-kotorye-nuzhno-znat-nachinayushhim/",
      },
     {
         "title": "сериал Friends",

@@ -11,6 +11,7 @@ from data import db_session
 from data.questions import Question
 from data.tests import Test
 from data.users import User
+from requests import get
 
 app = Flask(__name__)
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
@@ -32,7 +33,7 @@ class RegisterForm:
     stages = ["Введите своё имя", "Введите свою фамилию", "Введите ваш email", "Придумайте пароль от аккаунта",
               "Повторите пароль от аккаунта", "Введите свой возраст", "Введите ваш адрес проживания",
               "Какова ваша цель изучения английского?"
-              "\n(путешествия, бизнес, разговорный)"
+              "\n(путешествия, для работы за границей, разговорный)"
               "\nЭто не сильно повлияет на обучение в целом."]
 
     def __init__(self):
@@ -77,15 +78,15 @@ class UsersResource(Resource):
 
 class UsersListResource(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('id', required=True, type=int)
-    parser.add_argument('surname', required=True)
-    parser.add_argument('name', required=True)
-    parser.add_argument('age', required=True, type=int)
-    parser.add_argument('address', required=True)
-    parser.add_argument('email', required=True)
-    parser.add_argument('password', required=True)
-    parser.add_argument('telegram_name', required=True)
-    parser.add_argument('aim', required=True)
+    parser.add_argument('id', type=int, required=True)
+    parser.add_argument('surname')
+    parser.add_argument('name')
+    parser.add_argument('age', type=int)
+    parser.add_argument('address')
+    parser.add_argument('email')
+    parser.add_argument('password')
+    parser.add_argument('telegram_name')
+    parser.add_argument('aim')
 
     def get(self):
         session = db_session.create_session()
@@ -94,16 +95,22 @@ class UsersListResource(Resource):
 
     def post(self):
         args = UsersListResource.parser.parse_args()
+        attributes = ['surname', 'name', 'age', 'address', 'email', 'telegram_name', 'aim']
         session = db_session.create_session()
+        exist = session.query(User).filter(User.id == args['id']).first()
+        if exist:
+            return jsonify({"message": "such user already exists"})
         user = User(
             id=args['id'],
             surname=args['surname'],
             name=args['name'],
             age=args['age'],
             address=args['address'],
+            password=args['password'],
             email=args['email'],
             aim=args['aim'],
             telegram_name=args['telegram_name'],
+            curr_lesson=0,
         )
         user.set_password(args['password'])
         session.add(user)
@@ -115,6 +122,5 @@ if __name__ == "__main__":
     db_session.global_init('db/baza.db')
 
     api.add_resource(UsersListResource, '/api/users')
-    api.add_resource(UsersResource,
-                     '/api/users/<int:user_id>')
+    api.add_resource(UsersResource, '/api/users/<int:user_id>')
     app.run()

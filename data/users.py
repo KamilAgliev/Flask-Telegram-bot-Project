@@ -11,14 +11,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'users'
 
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, index=True)
     surname = sqlalchemy.Column(sqlalchemy.String)
     name = sqlalchemy.Column(sqlalchemy.String)
     age = sqlalchemy.Column(sqlalchemy.Integer)
     address = sqlalchemy.Column(sqlalchemy.String)
-    email = sqlalchemy.Column(sqlalchemy.String, unique=True, index=True)
+    email = sqlalchemy.Column(sqlalchemy.String)
     telegram_name = sqlalchemy.Column(sqlalchemy.String)
     aim = sqlalchemy.Column(sqlalchemy.String)
+    curr_lesson = sqlalchemy.Column(sqlalchemy.INTEGER)
+    password = sqlalchemy.Column(sqlalchemy.String)
     hashed_password = sqlalchemy.Column(sqlalchemy.String)
 
     def set_password(self, password):
