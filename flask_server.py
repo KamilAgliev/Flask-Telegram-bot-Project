@@ -30,8 +30,8 @@ def log_user(user_id, given_password):
 
 
 class RegisterForm:
-    from data.english_data import WORDS_FOR_LEARNING
-    stages = ["Введите своё имя",
+    stages = [
+              "Введите своё имя",
               "Введите свою фамилию",
               "Введите ваш email",
               "Придумайте пароль от аккаунта",
@@ -40,8 +40,8 @@ class RegisterForm:
               "Введите ваш адрес проживания",
               "Какова ваша цель изучения английского?"
               "\n(путешествия, для работы за границей, разговорный)"
-              "\nЭто не сильно повлияет на обучение в целом."
-              f"\n{WORDS_FOR_LEARNING['путешествия']['conclusion']}"]
+              "\nМожете выбрать несколько, вводите их через запятую(,)."
+              ]
 
     def __init__(self):
         self.surname = ""
@@ -107,9 +107,6 @@ class UsersListResource(Resource):
             email=args['email'],
             aim=args['aim'],
             telegram_name=args['telegram_name'],
-            travel_lesson=0,
-            speak_lesson=0,
-            work_lesson=0
         )
         user.set_password(args['password'])
         session.add(user)

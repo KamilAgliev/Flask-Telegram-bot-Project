@@ -9,7 +9,7 @@ from data.auth import TOKEN_FOR_TELEGRAM_BOT
 
 def first(update, context):
     update.message.reply_text("1")
-    return 1
+    return 2
 
 
 def print1(update, context):
@@ -22,7 +22,7 @@ def print2(update, context):
 
 def second(update, context):
     update.message.reply_text("2")
-    return 2
+    return 1
 
 
 def start(update, context):
@@ -44,11 +44,10 @@ def logout(update, context):
 
 
 def main():
-    # Создаём объект updater.
-    # Вместо слова "TOKEN" надо разместить полученный от @BotFather токен
-    updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True)
-
-    # Получаем из него диспетчер сообщений.
+    REQUEST_KWARGS = {
+        'proxy_url': 'socks5://localhost:9150',  # Адрес прокси сервера
+    }
+    updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True, request_kwargs=REQUEST_KWARGS)
     dp = updater.dispatcher
 
     # Создаём обработчик сообщений типа Filters.text

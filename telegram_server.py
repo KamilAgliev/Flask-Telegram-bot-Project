@@ -26,7 +26,7 @@ from data.auth import sessionStorage
 
 
 def register(update, context):
-    mes = update.message.text
+    mes = update.message.text.strip()
     user_id = update.message.from_user.id
     res = get(f"http://localhost:5000/api/users/{user_id}").json()
     if res["message"] == 'ok':
@@ -70,11 +70,17 @@ def register(update, context):
         update.message.reply_text(RegisterForm.stages[stage])
         sessionStorage[user_id]['register_stage'] += 1
         return 1
-    if mes.lower() not in ['путешествия', 'для работы за границей', 'разговорный']:
-        update.message.reply_text(
-            "Выберите одно из предложенных направлений! (путешествия, для работы за границей, разговорный)")
-        return 1
-    sessionStorage[user_id]["reg_form"].aim = mes.lower()
+    sessionStorage[user_id]["reg_form"].aim = ""
+    for section in mes.lower().split(','):
+        section = section.lower().strip()
+        if section not in ['путешествия', 'для работы за границей', 'разговорный']:
+            update.message.reply_text(
+                "Выберите цели из предложенных! (путешествия, для работы за границей, разговорный)."
+                "\nЕсли целей много, то вводите их через пробел")
+            return 1
+        else:
+            sessionStorage[user_id]["reg_form"].aim += section + ','
+    sessionStorage[user_id]["reg_form"].aim = sessionStorage[user_id]["reg_form"].aim[::-1]
     data = sessionStorage[user_id]["reg_form"]
     res = post('http://localhost:5000/api/users', json={
         'id': user_id,
@@ -94,14 +100,14 @@ def register(update, context):
 
 
 def login(update, context):
-    mes = update.message.text
+    mes = update.message.text.strip()
     user_id = update.message.from_user.id
     if sessionStorage[user_id]['login_stage'] == 0:
-        update.message.reply_text("Введите email и пароль от вашего аккаунта через пробел")
+        update.message.reply_text("Введите пароль от вашего аккаунта")
         sessionStorage[user_id]['login_stage'] += 1
         return 2
     else:
-        given_email, given_password = mes.split()
+        given_password = mes
         res = get(f"http://localhost:5000/api/users/{user_id}").json()
         if res['message'] == "ok":
             ses = db_session.create_session()
@@ -111,11 +117,12 @@ def login(update, context):
                 return learning(update, context)
             else:
                 update.message.reply_text(
-                    "Введены неправильные данные, \n скорее всего ошибка в пароле, \n введите данные ещё раз")
+                    "Введены неправильные данные, скорее всего ошибка в пароле."
+                    "\nвведите данные ещё раз")
                 return 2
         else:
             update.message.reply_text(
-                "Введены неправильные данные, \n проверьте логин и пароль, \n и введите ещё раз")
+                "Введены неправильные данные, проверьте логин и пароль и введите ещё раз")
             return 2
 
 
@@ -163,7 +170,7 @@ def learning_help(update, context):
 def get_other_links(update, context):
     from data.english_data import other_links
     user_id = update.message.from_user.id
-    mes = update.message.text
+    mes = update.message.text.strip()
     if mes == 'стоп':
         sessionStorage[user_id]['get_links_stage'] = 0
         return learning(update, context)
@@ -204,11 +211,11 @@ def recs_for_speakers(update, context):
     update.message.reply_text("""1. Медленного темпа речи
                                 Нет ничего страшного в том, что вы говорите не так быстро, как иностранцы,
                                 делаете паузы или подбираете слова. Для вас общение на английском — нечто новое,
-                                к чему нужно привыкнуть. Зато если вы будете стараться чаще говорить с местными жителями,
-                                к концу путешествия сумеете если и не разрушить, то значительно пошатнуть пресловутый языковой барьер.
+                                к чему нужно привыкнуть. Зато если вы будете стараться чаще говорить с людими,
+                                которые знают английский, то вы значительно пошатнёте пресловутый языковой барьер.
                                 \n2. Грамматических ошибок
                                 Вы находитесь не на экзамене, поэтому не бойтесь ошибаться.
-                                Местные жители все равно поймут вас,
+                                Люди, которые знают английский, все равно поймут вас,
                                 даже если вы случайно пропустите вспомогательный глагол или употребите не то время.
                                 Все прекрасно понимают, что английский язык для вас не является родным,
                                 поэтому не будут обращать внимания на небольшие погрешности.
@@ -217,7 +224,6 @@ def recs_for_speakers(update, context):
                                 Мы советуем ознакомиться со статьей: «Miscommunication abroad или как я ела мыло на обед».
                                 Вы увидите, нет ничего страшного в путанице, всегда можно найти выход из положения и
                                 объяснить другими словами, что вам нужно.
-                                Зато после путешествия вы еще долго будете со смехом вспоминать случившуюся историю.
                                 \n4. Акцента
                                 Наш последний совет: сохраняйте спокойствие и имитируйте британский акцент.
                                 Во многих из нас живет страх: я не смогу говорить как настоящий англичанин или американец,
@@ -228,29 +234,43 @@ def recs_for_speakers(update, context):
                                 формируются разные акценты в английском жителей различных стран.
                                 Тем не менее, это не мешает миллионам людей изучать язык, общаться и понимать друг друга.
                                 Кстати, многие считают, что австралийский и канадский английский звучат еще более экзотично,
-                                чем наша с вами речь""")
+                                чем наша с вами речь.""")
+
+
+def get_section_info(update, context):
+    from data.english_data import WORDS_FOR_LEARNING
+    user_id = update.message.from_user.id
+    curr_section = 1
+    text = "Вот информация о разделах, которые вы изучаете." \
+           "\nВы можете изменить свои цели изучения в личном кабинете."
+    aim = sessionStorage[user_id]['user_data']['aim']
+    for section in aim.split(','):
+        text += f"{curr_section} {section.title()}." \
+                f"\nНемного предисловия к разделу:" \
+                f"\n{WORDS_FOR_LEARNING[section]['inception']}" \
+                f"\nВот обобщение о разделе: " \
+                f"\n{WORDS_FOR_LEARNING[section]['conclusion']}"
+        curr_section += 1
+        text += '\n'
+    text = text.strip()
+    update.message.reply_text(text)
 
 
 def get_lesson(update, context):
     user_id = update.message.from_user.id
-    mes = update.message.text
+    mes = update.message.text.strip()
     from data.english_data import WORDS_FOR_LEARNING
     if 'lesson_stage' not in sessionStorage[user_id].keys():
         sessionStorage[user_id]['lesson_stage'] = 0
         sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
-    curr_lesson = -1
-    if sessionStorage[user_id]['user_data']['aim'] == 'путешествия':
-        curr_lesson = sessionStorage[user_id]['user_data']['travel_lesson']
-    elif sessionStorage[user_id]['user_data']['aim'] == 'для работы за границей':
-        curr_lesson = sessionStorage[user_id]['user_data']['work_lesson']
-    else:
-        curr_lesson = sessionStorage[user_id]['user_data']['speak_lesson']
-    update.message.reply_text(
-        f"На данный момент вы изучаете этот раздел: {sessionStorage[user_id]['user_data']['aim']}"
-        "\nЧтобы узнать команды введите /help_in_lesson."
-        "\nеСегодня мы изучим тему {}"
-    )
 
+    aim = sessionStorage[user_id]['user_data']['aim'].split(',')
+    if sessionStorage[user_id]['lesson_stage'] == 0:
+        # показать все темы, предоставить выбор
+        get_section_info(update, context)
+        get_all_themes()
+        chose_one_of_them()
+        get_either_test_either_some_other_game_of_words()
     return 3
 
 
@@ -270,32 +290,20 @@ def change_aim(update, context):
     user_data = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
     if 'change_aim_stage' not in sessionStorage[user_id].keys():
         sessionStorage[user_id]['change_aim_stage'] = 0
-        sessionStorage[user_id]['other_themes'] = {'путешествия': 1, 'для работы за границей': 1, 'разговорный': 1}
-        sessionStorage[user_id]['other_themes'][user_data['aim']] = 0
     if sessionStorage[user_id]['change_aim_stage'] == 0:
-        if (len(WORDS_FOR_LEARNING[user_data['aim']]['themes']) + 1) // 2 > user_data['curr_lesson']:
-            text = "\nВы изучили не так много в этом разделе," \
-                   "\nподумайте хорошо перед решением."
-        else:
-            text = "\nВы уже изучили достаточно в этом разделе," \
-                   "\nсамое время перейти в другой!"
-            text += '\n'
-        a, b = None, None
-        for key in sessionStorage[user_id]['other_themes'].keys():
-            if sessionStorage[user_id]['other_themes'][key] == 1:
-                if a is None:
-                    a = key
-                else:
-                    b = key
-        text += f'\nВыберите одно из других направлений \n({a}, {b})'
+        text = f'Выберите цели изучения английского(путешествия, для работы за границей, разговорный),' \
+               f'\nесли их несколько, то вводите через запятую(,)'
         update.message.reply_text(text)
         sessionStorage[user_id]['change_aim_stage'] += 1
         return 6
     else:
-        if mes not in ['путешествия', 'для работы за границей', 'разговорный']:
-            update.message.reply_text("Пожалуйста введите правильые данные"
-                                      "\n(путешествия, для работы за границей, разговорный)")
-            return 6
+        for section in mes.lower().split(','):
+            section = section.lower().strip()
+            if section not in ['путешествия', 'для работы за границей', 'разговорный']:
+                update.message.reply_text(
+                    "Выберите цели из предложенных! (путешествия, для работы за границей, разговорный)."
+                    "\nЕсли целей много, то вводите их через пробел")
+                return 6
         else:
             deliting = delete(f"http://localhost:5000/api/users/{user_id}").json()
             print(deliting)
@@ -312,15 +320,17 @@ def change_aim(update, context):
             }).json()
             print(res)
             update.message.reply_text("Ваша раздел изучения успешно обновлён!")
+            if 'lesson_stage' in sessionStorage[user_id].keys():
+                sessionStorage[user_id]['lesson_stage'] = 0
             return learning(update, context)
 
 
-def talk_to_Alice(update, context):
-    mes = update.message.text
+def talk_to_alice(update, context):
+    mes = update.message.text.strip()
     if mes.lower() == 'стоп':
         return learning(update, context)
-    update.message.reply_text("тип я поговорил")
-    return 7
+    update.message.reply_text("тип я поговорил, PTK привет")
+    return learning(update, context)
 
 
 if __name__ == "__main__":
@@ -350,7 +360,7 @@ if __name__ == "__main__":
             5: [MessageHandler(Filters.text, get_lesson),
                 CommandHandler('help_in_lesson', help_in_lesson)],  # lesson
             6: [MessageHandler(Filters.text, change_aim)],  # aim changing
-            7: [MessageHandler(Filters.text, talk_to_Alice)]  # dialog with Alice
+            7: [MessageHandler(Filters.text, talk_to_alice)]  # dialog with Alice
         }
     )
     dp.add_handler(conv_handler)
