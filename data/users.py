@@ -19,7 +19,9 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     email = sqlalchemy.Column(sqlalchemy.String)
     telegram_name = sqlalchemy.Column(sqlalchemy.String)
     aim = sqlalchemy.Column(sqlalchemy.String)
-    curr_lesson = sqlalchemy.Column(sqlalchemy.INTEGER)
+    travel_lesson = sqlalchemy.Column(sqlalchemy.INTEGER)
+    word_lesson = sqlalchemy.Column(sqlalchemy.INTEGER)
+    speak_lesson = sqlalchemy.Column(sqlalchemy.INTEGER)
     password = sqlalchemy.Column(sqlalchemy.String)
     hashed_password = sqlalchemy.Column(sqlalchemy.String)
 

@@ -30,11 +30,18 @@ def log_user(user_id, given_password):
 
 
 class RegisterForm:
-    stages = ["Введите своё имя", "Введите свою фамилию", "Введите ваш email", "Придумайте пароль от аккаунта",
-              "Повторите пароль от аккаунта", "Введите свой возраст", "Введите ваш адрес проживания",
+    from data.english_data import WORDS_FOR_LEARNING
+    stages = ["Введите своё имя",
+              "Введите свою фамилию",
+              "Введите ваш email",
+              "Придумайте пароль от аккаунта",
+              "Повторите пароль от аккаунта",
+              "Введите свой возраст",
+              "Введите ваш адрес проживания",
               "Какова ваша цель изучения английского?"
               "\n(путешествия, для работы за границей, разговорный)"
-              "\nЭто не сильно повлияет на обучение в целом."]
+              "\nЭто не сильно повлияет на обучение в целом."
+              f"\n{WORDS_FOR_LEARNING['путешествия']['conclusion']}"]
 
     def __init__(self):
         self.surname = ""
@@ -46,16 +53,6 @@ class RegisterForm:
         self.address = ""
         self.telegram_name = ""
         self.aim = ""
-
-    def validate_on_submit(self):
-        s = db_session.create_session()
-        if self.email == "" or self.password == "" or self.surname == "" or self.name == "" or self.age == -1 or self.address == "":
-            return "Пожалуйста заполните все поля, это важно!"
-        user = s.query(User).filter(User.email == self.email).first()
-        if user:
-            return "Такой email уже используется!"
-        if self.password != self.password_again:
-            return "Пароли не совпадают!"
 
 
 class UsersResource(Resource):
@@ -110,7 +107,9 @@ class UsersListResource(Resource):
             email=args['email'],
             aim=args['aim'],
             telegram_name=args['telegram_name'],
-            curr_lesson=0,
+            travel_lesson=0,
+            speak_lesson=0,
+            work_lesson=0
         )
         user.set_password(args['password'])
         session.add(user)
