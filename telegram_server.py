@@ -70,11 +70,11 @@ def register(update, context):
         update.message.reply_text(RegisterForm.stages[stage])
         sessionStorage[user_id]['register_stage'] += 1
         return 1
-    if mes not in ['путешествия', 'для работы за границей', 'разговорный']:
+    if mes.lower() not in ['путешествия', 'для работы за границей', 'разговорный']:
         update.message.reply_text(
             "Выберите одно из предложенных направлений! (путешествия, для работы за границей, разговорный)")
         return 1
-    sessionStorage[user_id]["reg_form"].aim = mes
+    sessionStorage[user_id]["reg_form"].aim = mes.lower()
     data = sessionStorage[user_id]["reg_form"]
     res = post('http://localhost:5000/api/users', json={
         'id': user_id,
@@ -200,18 +200,58 @@ def get_people_to_chat(update, context):
     return 3
 
 
+def recs_for_speakers(update, context):
+    update.message.reply_text("""1. Медленного темпа речи
+                                Нет ничего страшного в том, что вы говорите не так быстро, как иностранцы,
+                                делаете паузы или подбираете слова. Для вас общение на английском — нечто новое,
+                                к чему нужно привыкнуть. Зато если вы будете стараться чаще говорить с местными жителями,
+                                к концу путешествия сумеете если и не разрушить, то значительно пошатнуть пресловутый языковой барьер.
+                                \n2. Грамматических ошибок
+                                Вы находитесь не на экзамене, поэтому не бойтесь ошибаться.
+                                Местные жители все равно поймут вас,
+                                даже если вы случайно пропустите вспомогательный глагол или употребите не то время.
+                                Все прекрасно понимают, что английский язык для вас не является родным,
+                                поэтому не будут обращать внимания на небольшие погрешности.
+                                \n3. Лексических ошибок
+                                Некоторые люди боятся запутаться в английской лексике.
+                                Мы советуем ознакомиться со статьей: «Miscommunication abroad или как я ела мыло на обед».
+                                Вы увидите, нет ничего страшного в путанице, всегда можно найти выход из положения и
+                                объяснить другими словами, что вам нужно.
+                                Зато после путешествия вы еще долго будете со смехом вспоминать случившуюся историю.
+                                \n4. Акцента
+                                Наш последний совет: сохраняйте спокойствие и имитируйте британский акцент.
+                                Во многих из нас живет страх: я не смогу говорить как настоящий англичанин или американец,
+                                у меня акцент, это может звучать смешно. Совершенно необоснованная фобия.
+                                Во-первых, у каждого человека есть свои собственные особенности речи, интонации, произношения. 
+                                Во-вторых, в любой стране есть местный вариант английского: в некоторых языках нет звука «ш»,
+                                в каком-то отсутствует «ч», кому-то сложно научиться произносить сочетание th — так и
+                                формируются разные акценты в английском жителей различных стран.
+                                Тем не менее, это не мешает миллионам людей изучать язык, общаться и понимать друг друга.
+                                Кстати, многие считают, что австралийский и канадский английский звучат еще более экзотично,
+                                чем наша с вами речь""")
+
+
 def get_lesson(update, context):
     user_id = update.message.from_user.id
     mes = update.message.text
-
+    from data.english_data import WORDS_FOR_LEARNING
     if 'lesson_stage' not in sessionStorage[user_id].keys():
         sessionStorage[user_id]['lesson_stage'] = 0
         sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
-    if sessionStorage[user_id]['lesson_stage'] == 0:
-        update.message.reply_text(
-            f"На данный момент вы изучаете этот раздел: {sessionStorage[user_id]['user_data']['aim']}"
-            "Чтобы узнать команды введите /help_in_lesson")
-        return 5
+    curr_lesson = -1
+    if sessionStorage[user_id]['user_data']['aim'] == 'путешествия':
+        curr_lesson = sessionStorage[user_id]['user_data']['travel_lesson']
+    elif sessionStorage[user_id]['user_data']['aim'] == 'для работы за границей':
+        curr_lesson = sessionStorage[user_id]['user_data']['work_lesson']
+    else:
+        curr_lesson = sessionStorage[user_id]['user_data']['speak_lesson']
+    update.message.reply_text(
+        f"На данный момент вы изучаете этот раздел: {sessionStorage[user_id]['user_data']['aim']}"
+        "\nЧтобы узнать команды введите /help_in_lesson."
+        "\nеСегодня мы изучим тему {}"
+    )
+
+    return 3
 
 
 def help_in_lesson(update, context):
@@ -275,6 +315,14 @@ def change_aim(update, context):
             return learning(update, context)
 
 
+def talk_to_Alice(update, context):
+    mes = update.message.text
+    if mes.lower() == 'стоп':
+        return learning(update, context)
+    update.message.reply_text("тип я поговорил")
+    return 7
+
+
 if __name__ == "__main__":
     db_session.global_init("db/baza.db")
     REQUEST_KWARGS = {
@@ -299,9 +347,10 @@ if __name__ == "__main__":
                 CommandHandler("change_aim", change_aim),
                 MessageHandler(Filters.text, learning)],
             4: [MessageHandler(Filters.text, get_other_links)],  # other links
-            5: [MessageHandler(Filters.text, get_other_links),
+            5: [MessageHandler(Filters.text, get_lesson),
                 CommandHandler('help_in_lesson', help_in_lesson)],  # lesson
-            6: [MessageHandler(Filters.text, change_aim)]
+            6: [MessageHandler(Filters.text, change_aim)],  # aim changing
+            7: [MessageHandler(Filters.text, talk_to_Alice)]  # dialog with Alice
         }
     )
     dp.add_handler(conv_handler)
