@@ -5,10 +5,13 @@ from telegram.ext import CallbackContext, CommandHandler
 # Определяем функцию-обработчик сообщений.
 # У неё два параметра, сам бот и класс updater, принявший сообщение.
 from data.auth import TOKEN_FOR_TELEGRAM_BOT
-
+data = {
+    'in': 1
+}
 
 def first(update, context):
     update.message.reply_text("1")
+    data['in'] = 0
     return 2
 
 
@@ -21,7 +24,14 @@ def print2(update, context):
 
 
 def second(update, context):
+    if data['in']:
+        return 1
     update.message.reply_text("2")
+    return 1
+
+
+def return_to_f(update, context):
+    data['in'] = 1
     return 1
 
 
@@ -62,7 +72,8 @@ def main():
             # регистрация
             1: [MessageHandler(Filters.text, first), CommandHandler("print", print1)],
             # авторизация
-            2: [MessageHandler(Filters.text, second), CommandHandler("print", print2)],
+            2: [CommandHandler("return", return_to_f), MessageHandler(Filters.text, second), CommandHandler("print", print2),
+                ],
         }
     )
     dp.add_handler(conv_handler)

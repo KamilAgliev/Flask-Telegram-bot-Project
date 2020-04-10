@@ -8,6 +8,11 @@ commands = {"learning_menu": ["/help - выводит список команд"
                               "/talk_to_alice",
                               ""],
             "lesson_menu": ["help_in_lesson",
-                            "get_sections_info"],# пишет аннотации к каждому разделу
+                            "get_sections_info",# пишет аннотации к каждому разделу
+                            "get_all_themes",# показать все темы разделов
+                            "run_test",
+                            "return_to_cabinet",
+                            "",
+                            ""],
 
             }

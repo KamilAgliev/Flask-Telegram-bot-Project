@@ -1,5 +1,7 @@
 """MyEng - Телеграм бот для узучения английского языка"""
 import datetime
+
+import requests
 from flask import Flask, render_template, jsonify
 import datetime
 from flask import Flask, render_template, request
@@ -148,7 +150,7 @@ def start(update, context):
 
 
 def learning(update, context):
-    update.message.reply_text("Вы снова в личном кабинете,"
+    update.message.reply_text("Вы в личном кабинете,"
                               "\nЧтобы узнать все команды наберите /help")
     return 3
 
@@ -188,7 +190,8 @@ def get_other_links(update, context):
         for link in other_links:
             if link['title'] == mes:
                 update.message.reply_text(f"""Вот ваш запрос на {link['title']}: 
-                                            \n{link['url']}""")
+                                            \n{link['url']}
+                                            \nВведите ещё одну тему или напишите 'стоп' для выхода в личный кабинет""")
                 return 4
     update.message("Пожалуйста введите правильные данные!")
     return 4
@@ -204,37 +207,6 @@ def get_people_to_chat(update, context):
         if res['users'][i].id != update.message.from_user.id:
             text += str(i + 1) + '. ' + res['users'][i]['telegram_name']
     update.message.reply_text(text)
-    return 3
-
-
-def recs_for_speakers(update, context):
-    update.message.reply_text("""1. Медленного темпа речи
-                                Нет ничего страшного в том, что вы говорите не так быстро, как иностранцы,
-                                делаете паузы или подбираете слова. Для вас общение на английском — нечто новое,
-                                к чему нужно привыкнуть. Зато если вы будете стараться чаще говорить с людими,
-                                которые знают английский, то вы значительно пошатнёте пресловутый языковой барьер.
-                                \n2. Грамматических ошибок
-                                Вы находитесь не на экзамене, поэтому не бойтесь ошибаться.
-                                Люди, которые знают английский, все равно поймут вас,
-                                даже если вы случайно пропустите вспомогательный глагол или употребите не то время.
-                                Все прекрасно понимают, что английский язык для вас не является родным,
-                                поэтому не будут обращать внимания на небольшие погрешности.
-                                \n3. Лексических ошибок
-                                Некоторые люди боятся запутаться в английской лексике.
-                                Мы советуем ознакомиться со статьей: «Miscommunication abroad или как я ела мыло на обед».
-                                Вы увидите, нет ничего страшного в путанице, всегда можно найти выход из положения и
-                                объяснить другими словами, что вам нужно.
-                                \n4. Акцента
-                                Наш последний совет: сохраняйте спокойствие и имитируйте британский акцент.
-                                Во многих из нас живет страх: я не смогу говорить как настоящий англичанин или американец,
-                                у меня акцент, это может звучать смешно. Совершенно необоснованная фобия.
-                                Во-первых, у каждого человека есть свои собственные особенности речи, интонации, произношения. 
-                                Во-вторых, в любой стране есть местный вариант английского: в некоторых языках нет звука «ш»,
-                                в каком-то отсутствует «ч», кому-то сложно научиться произносить сочетание th — так и
-                                формируются разные акценты в английском жителей различных стран.
-                                Тем не менее, это не мешает миллионам людей изучать язык, общаться и понимать друг друга.
-                                Кстати, многие считают, что австралийский и канадский английский звучат еще более экзотично,
-                                чем наша с вами речь.""")
 
 
 def get_section_info(update, context):
@@ -258,6 +230,9 @@ def get_section_info(update, context):
 
 def get_lesson(update, context):
     user_id = update.message.from_user.id
+    update.message.reply_text("Вы зашли в раздел занятий."
+                              "\nЗдесь отключены некоторые функции, ведь они будут токоль отвлекать вас"
+                              "\nТакже можете написать /help_in_lesson, чтобы узнать все команды")
     mes = update.message.text.strip()
     from data.english_data import WORDS_FOR_LEARNING
     if 'lesson_stage' not in sessionStorage[user_id].keys():
@@ -268,10 +243,112 @@ def get_lesson(update, context):
     if sessionStorage[user_id]['lesson_stage'] == 0:
         # показать все темы, предоставить выбор
         get_section_info(update, context)
-        get_all_themes()
-        chose_one_of_them()
-        get_either_test_either_some_other_game_of_words()
-    return 3
+        get_all_themes(update, context)
+        update.message.reply_text("Чтобы увидеть информацию по какой-либо теме, напишите её.(строго как в сообщении)"
+                                  "\nВы также можете написать 'стоп' для возвращения в личный кабинет")
+        sessionStorage[user_id]['lesson_stage'] += 1
+    if sessionStorage[user_id]['lesson_stage'] == 1:
+        if mes.lower() == 'стоп':
+            sessionStorage[user_id]['lesson_stage'] = 0
+            return learning(update, context)
+        sections = sessionStorage[user_id]['user_data']['aim'].split(',')
+        lesson = None
+        curr_section = None
+        for section in sections:
+            if mes in WORDS_FOR_LEARNING[section]['themes']:
+                lesson = WORDS_FOR_LEARNING[section]['themes'][mes]
+                curr_section = section
+                break
+        if lesson is None:
+            update.message.reply_text("Введите существующую тему!")
+            sessionStorage[user_id]['lesson_stage'] = 0
+            return 5
+        lesson_text = f"Вот ваш урок. " \
+                      f"\n1. Оглавление: {lesson['title']}"
+        if len(lesson['youtube_urls']) != 0:
+            mnozh = 'a'
+            if len(lesson['youtube_urls']) > 1:
+                mnozh = 'и'
+            lesson_text += f"\nВот ссылк{mnozh} на видео по данной тематике:"
+            for url in lesson['youtube_url']:
+                lesson_text += f"\n{url}"
+        if len(lesson['words']):
+            lesson_text += "\nВот слова по теме:"
+            for word in lesson['words']:
+                lesson_text += f'\n{word[0]} - {word[1]}'
+        if len(lesson['exsamples']):
+            lesson_text += "\nВот примеры, где используются слова из темы в контексте, что очень важно"
+            for exsample in lesson['exsamples']:
+                lesson_text += f'\n{exsample}'
+        if len(lesson['description']):
+            lesson_text += f"\nДополнительная информация:" \
+                           f"\n{lesson['description']}"
+        lesson_text += 'Ну пугайтесь большого объёма информации, потратьте столько времени,' \
+                       ' сколько нужно, чтобы овладеть темой.' \
+                       '\nВведите стоп, чтобы вернуть в личный кабинет' \
+                       '\nЗапустите команду /run_test, чтобы начать тестирование по теме' \
+                       '\nНапишите название любой темы их предложенных, чтобы увидеть информацию о ней'
+        sessionStorage[user_id]['lesson_stage'] += 1
+    if sessionStorage[user_id]['lesson_stage'] == 2:
+        sections = sessionStorage[user_id]['user_data']['aim'].split(',')
+        if mes.lower() == 'стоп':
+            sessionStorage[user_id]['lesson_stage'] = 0
+            return learning(update, context)
+        lesson = None
+        curr_section = None
+        for section in sections:
+            if mes in WORDS_FOR_LEARNING[section]['themes']:
+                lesson = WORDS_FOR_LEARNING[section]['themes'][mes]
+                curr_section = section
+                break
+        if lesson is None:
+            update.message.reply_text("Введите существующую тему!")
+            sessionStorage[user_id]['lesson_stage'] = 0
+            return 5
+        lesson_text = f"Вот ваш урок. " \
+                      f"\n1. Оглавление: {lesson['title']}"
+        if len(lesson['youtube_urls']) != 0:
+            mnozh = 'a'
+            if len(lesson['youtube_urls']) > 1:
+                mnozh = 'и'
+            lesson_text += f"\nВот ссылк{mnozh} на видео по данной тематике:"
+            for url in lesson['youtube_url']:
+                lesson_text += f"\n{url}"
+        if len(lesson['words']):
+            lesson_text += "\nВот слова по теме:"
+            for word in lesson['words']:
+                lesson_text += f'\n{word[0]} - {word[1]}'
+        if len(lesson['exsamples']):
+            lesson_text += "\nВот примеры, где используются слова из темы в контексте, что очень важно"
+            for exsample in lesson['exsamples']:
+                lesson_text += f'\n{exsample}'
+        if len(lesson['description']):
+            lesson_text += f"\nДополнительная информация:" \
+                           f"\n{lesson['description']}"
+        lesson_text += 'Ну пугайтесь большого объёма информации, потратьте столько времени,' \
+                       ' сколько нужно, чтобы овладеть темой.' \
+                       '\nВведите стоп, чтобы вернуть в личный кабинет' \
+                       '\nЗапустите команду /run_test, чтобы начать тестирование по теме' \
+                       '\nНапишите название любой темы их предложенных, чтобы увидеть информацию о ней'
+
+    # get_either_test_either_some_other_game_of_words()
+
+
+def get_all_themes(update, context):
+    from data.english_data import WORDS_FOR_LEARNING
+    user_id = update.message.from_user.id
+    text = ""
+    sections = sessionStorage[user_id]['user_data']['aim'].split(',')
+    c = 1
+    for section in sections:
+        cnt = 1
+        text += f"\n{c}. {section.title()}"
+        for theme in WORDS_FOR_LEARNING[section]['themes']:
+            text += f"\n{c}.{cnt} {theme}"
+            cnt += 1
+        c += 1
+    text = text.strip()
+    update.message.reply_text(text)
 
 
 def help_in_lesson(update, context):
@@ -333,6 +410,59 @@ def talk_to_alice(update, context):
     return learning(update, context)
 
 
+def run_test(update, context):
+    user_id = update.message.from_user.id
+    mes = update.message.text.strip()
+    if mes == 'стоп':
+        update.message.reply_text("Вы снова в разделе занятий!")
+        return 5
+    from data.english_data import WORDS_FOR_LEARNING
+    user_data = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+    if 'run_test_stage' not in sessionStorage[user_id].keys():
+        sessionStorage[user_id]['run_test_stage'] = 0
+
+    # if sessionStorage[user_id]['run_test_stage'] == 0:
+    update.message.reply_text("ТИп прошел и все хорошо")
+
+
+def get_myeng_map(update, context):
+    users = get("http://localhost:5000/api/users")
+    marks = ""
+    for user in users:
+        request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode" \
+                  f"={user['address']}&format=json"
+        response = requests.get(request)
+        if not response:
+            continue
+        else:
+            json_response = response.json()
+            if len(json_response["response"]["GeoObjectCollection"][
+                       "featureMember"]) == 0:
+                continue
+            toponym = \
+                json_response["response"]["GeoObjectCollection"][
+                    "featureMember"][
+                    0]["GeoObject"]
+            toponym_coodrinates = toponym["Point"]["pos"]
+            longitude, latitude = toponym_coodrinates.split()
+            metka = f'{longitude},{latitude},pm'
+            metka += 'wt'
+            metka += 's' + '~'
+            marks += metka
+    self.params = {
+        "z": self.z,
+        "ll": self.longitude + ',' + self.latitude,
+        "l": self.l[0],
+        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+        "pt": self.marks[:-1]
+    }
+    geocoder_server = "http://static-maps.yandex.ru/1.x/"
+    response = requests.get(geocoder_server, params=self.params)
+    print(response.url)
+    with open(f"map.{self.l[1]}", "wb") as file:
+        file.write(response.content)
+    self.image_label.setPixmap(QPixmap(f"map.{self.l[1]}"))
+
 if __name__ == "__main__":
     db_session.global_init("db/baza.db")
     REQUEST_KWARGS = {
@@ -352,15 +482,20 @@ if __name__ == "__main__":
             3: [CommandHandler("logout", logout),
                 CommandHandler("get_other_links", get_other_links),
                 CommandHandler("get_people_to_chat", get_people_to_chat),
+                CommandHandler("get_myeng_map", get_myeng_map),
                 CommandHandler("help", learning_help),
                 CommandHandler("get_lesson", get_lesson),
                 CommandHandler("change_aim", change_aim),
+                CommandHandler("run_test", run_test),
                 MessageHandler(Filters.text, learning)],
             4: [MessageHandler(Filters.text, get_other_links)],  # other links
-            5: [MessageHandler(Filters.text, get_lesson),
-                CommandHandler('help_in_lesson', help_in_lesson)],  # lesson
+            5: [CommandHandler("get_people_to_chat", get_people_to_chat),
+                CommandHandler('help_in_lesson', help_in_lesson),
+                CommandHandler("run_test", run_test), MessageHandler(Filters.text, get_lesson)],  # lesson
             6: [MessageHandler(Filters.text, change_aim)],  # aim changing
-            7: [MessageHandler(Filters.text, talk_to_alice)]  # dialog with Alice
+            7: [MessageHandler(Filters.text, talk_to_alice)],  # dialog with Alice
+            8: [MessageHandler(Filters.text, get_lesson)],  # test_making returns nothing
+            9: [MessageHandler(Filters.text, run_test)]  # test_making returns nothing
         }
     )
     dp.add_handler(conv_handler)
