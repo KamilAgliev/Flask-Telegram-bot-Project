@@ -218,10 +218,10 @@ def get_section_info(update, context):
     aim = sessionStorage[user_id]['user_data']['aim']
     for section in aim.split(','):
         text += f"{curr_section} {section.title()}." \
-                f"\nНемного предисловия к разделу:" \
-                f"\n{WORDS_FOR_LEARNING[section]['inception']}" \
-                f"\nВот обобщение о разделе: " \
-                f"\n{WORDS_FOR_LEARNING[section]['conclusion']}"
+            f"\nНемного предисловия к разделу:" \
+            f"\n{WORDS_FOR_LEARNING[section]['inception']}" \
+            f"\nВот обобщение о разделе: " \
+            f"\n{WORDS_FOR_LEARNING[section]['conclusion']}"
         curr_section += 1
         text += '\n'
     text = text.strip()
@@ -264,7 +264,7 @@ def get_lesson(update, context):
             sessionStorage[user_id]['lesson_stage'] = 0
             return 5
         lesson_text = f"Вот ваш урок. " \
-                      f"\n1. Оглавление: {lesson['title']}"
+            f"\n1. Оглавление: {lesson['title']}"
         if len(lesson['youtube_urls']) != 0:
             mnozh = 'a'
             if len(lesson['youtube_urls']) > 1:
@@ -282,7 +282,7 @@ def get_lesson(update, context):
                 lesson_text += f'\n{exsample}'
         if len(lesson['description']):
             lesson_text += f"\nДополнительная информация:" \
-                           f"\n{lesson['description']}"
+                f"\n{lesson['description']}"
         lesson_text += 'Ну пугайтесь большого объёма информации, потратьте столько времени,' \
                        ' сколько нужно, чтобы овладеть темой.' \
                        '\nВведите стоп, чтобы вернуть в личный кабинет' \
@@ -306,7 +306,7 @@ def get_lesson(update, context):
             sessionStorage[user_id]['lesson_stage'] = 0
             return 5
         lesson_text = f"Вот ваш урок. " \
-                      f"\n1. Оглавление: {lesson['title']}"
+            f"\n1. Оглавление: {lesson['title']}"
         if len(lesson['youtube_urls']) != 0:
             mnozh = 'a'
             if len(lesson['youtube_urls']) > 1:
@@ -324,7 +324,7 @@ def get_lesson(update, context):
                 lesson_text += f'\n{exsample}'
         if len(lesson['description']):
             lesson_text += f"\nДополнительная информация:" \
-                           f"\n{lesson['description']}"
+                f"\n{lesson['description']}"
         lesson_text += 'Ну пугайтесь большого объёма информации, потратьте столько времени,' \
                        ' сколько нужно, чтобы овладеть темой.' \
                        '\nВведите стоп, чтобы вернуть в личный кабинет' \
@@ -369,7 +369,7 @@ def change_aim(update, context):
         sessionStorage[user_id]['change_aim_stage'] = 0
     if sessionStorage[user_id]['change_aim_stage'] == 0:
         text = f'Выберите цели изучения английского(путешествия, для работы за границей, разговорный),' \
-               f'\nесли их несколько, то вводите через запятую(,)'
+            f'\nесли их несколько, то вводите через запятую(,)'
         update.message.reply_text(text)
         sessionStorage[user_id]['change_aim_stage'] += 1
         return 6
@@ -426,11 +426,11 @@ def run_test(update, context):
 
 
 def get_myeng_map(update, context):
-    users = get("http://localhost:5000/api/users")
+    users = get(f"http://localhost:5000/api/users").json()['users']
     marks = ""
     for user in users:
         request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode" \
-                  f"={user['address']}&format=json"
+            f"={user['address']}&format=json"
         response = requests.get(request)
         if not response:
             continue
@@ -449,19 +449,20 @@ def get_myeng_map(update, context):
             metka += 'wt'
             metka += 's' + '~'
             marks += metka
-    self.params = {
-        "z": self.z,
-        "ll": self.longitude + ',' + self.latitude,
-        "l": self.l[0],
-        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
-        "pt": self.marks[:-1]
-    }
-    geocoder_server = "http://static-maps.yandex.ru/1.x/"
-    response = requests.get(geocoder_server, params=self.params)
-    print(response.url)
-    with open(f"map.{self.l[1]}", "wb") as file:
-        file.write(response.content)
-    self.image_label.setPixmap(QPixmap(f"map.{self.l[1]}"))
+    Zend = ""
+    if len(users) == 1:
+        Zend = "&z=2"
+    static_api_request = f"http://static-maps.yandex.ru/1.x/?" \
+        f"l=map&apikey=40d1649f-0493-4b70-98ba-98533de7710b&pt={marks[:-1]}" + Zend
+    context.bot.send_photo(
+        update.message.chat_id,  # Идентификатор чата. Куда посылать картинку.
+        # Ссылка на static API, по сути, ссылка на картинку.
+        # Телеграму можно передать прямо её, не скачивая предварительно карту.
+        static_api_request,
+        caption=f"Вот пользователи телеграм бота MyEng на карте!"
+    )
+    return 3
+
 
 if __name__ == "__main__":
     db_session.global_init("db/baza.db")
