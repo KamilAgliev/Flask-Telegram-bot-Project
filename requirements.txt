@@ -1,3 +1,2 @@
-random=9.6
-requests=2.22.0
-telegram=12.5.1
+requests==2.22.0
+telegram==12.5.1
