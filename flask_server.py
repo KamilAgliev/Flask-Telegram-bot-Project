@@ -101,14 +101,12 @@ class UsersListResource(Resource):
             aim=args['aim'],
             telegram_name=args['telegram_name'],
         )
-        user.set_password(args['password'])
         session.add(user)
         session.commit()
         return jsonify({'success': 'OK - the user has been added'})
 
 
 if __name__ == "__main__":
-    print(2)
     db_session.global_init('db/baza.db')
 
     api.add_resource(UsersListResource, '/api/users')

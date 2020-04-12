@@ -180,9 +180,7 @@ def login(update, context):
         given_password = mes
         res = get(f"http://localhost:5000/api/users/{user_id}").json()
         if res['message'] == "ok":
-            ses = db_session.create_session()
-            user = ses.query(User).filter(User.id == user_id).first()
-            if user and user.check_password(given_password):
+            if res['user_data']['password'] == given_password:
                 sessionStorage[user_id]['login_stage'] = 0
                 return learning(update, context)
             else:
