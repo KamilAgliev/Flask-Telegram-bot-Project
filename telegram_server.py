@@ -810,6 +810,7 @@ def unauthed(update, context):
 
 
 if __name__ == "__main__":
+    print(1)
     db_session.global_init("db/baza.db")
     updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True)
     dp = updater.dispatcher

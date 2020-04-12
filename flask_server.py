@@ -108,6 +108,7 @@ class UsersListResource(Resource):
 
 
 if __name__ == "__main__":
+    print(2)
     db_session.global_init('db/baza.db')
 
     api.add_resource(UsersListResource, '/api/users')
