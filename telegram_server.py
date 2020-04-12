@@ -810,10 +810,7 @@ def unauthed(update, context):
 
 if __name__ == "__main__":
     db_session.global_init("db/baza.db")
-    REQUEST_KWARGS = {
-        'proxy_url': 'socks5://localhost:9150',  # Адрес прокси сервера
-    }
-    updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True, request_kwargs=REQUEST_KWARGS)
+    updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True)
     dp = updater.dispatcher
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
