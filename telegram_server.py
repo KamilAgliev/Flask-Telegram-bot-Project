@@ -196,6 +196,7 @@ def login(update, context):
 
 
 def start(update, context):
+    update.message.reply_text("Я работаю")
     user_id = update.message.from_user.id
     res = get(f"http://localhost:5000/api/users/{user_id}").json()
     if res["message"] == 'ok':
