@@ -1,17 +1,10 @@
 """MyEng - Телеграм бот для узучения английского языка"""
+from flask import jsonify
 import datetime
-from flask import Flask, render_template, jsonify
-import datetime
-from flask import Flask, render_template, request
-from flask_login import LoginManager, login_user, current_user, logout_user, login_required
+from flask import Flask
 from flask_restful import Resource, Api, reqparse
-from flask_wtf import FlaskForm
-from werkzeug.exceptions import abort
 from data import db_session
-from data.questions import Question
-from data.tests import Test
 from data.users import User
-from requests import get
 
 app = Flask(__name__)
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)

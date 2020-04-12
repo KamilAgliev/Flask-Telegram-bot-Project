@@ -1,31 +1,14 @@
 """MyEng - Телеграм бот для узучения английского языка"""
-import datetime
 import random
-
 import requests
-from flask import Flask, render_template, jsonify
-import datetime
-from flask import Flask, render_template, request
-from flask_login import LoginManager, login_user, logout_user, \
-    login_required
-from flask_restful import Resource, Api, reqparse
-from flask_wtf import FlaskForm
 from requests import post, get, delete
 from telegram import ReplyKeyboardMarkup
-from werkzeug.exceptions import abort
-from werkzeug.utils import redirect
-from wtforms import PasswordField, BooleanField, SubmitField, StringField
-from wtforms.fields.html5 import EmailField
-from wtforms.validators import DataRequired
-from flask import make_response
 from data import db_session
 from data.users import User
 from flask_server import RegisterForm
-
 from data.telegram_bot_data import TOKEN_FOR_TELEGRAM_BOT
-# Импортируем необходимые классы.
 from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
-from telegram.ext import CallbackContext, CommandHandler
+from telegram.ext import CommandHandler
 from data.telegram_bot_data import sessionStorage
 
 reply_keyboard = [["1000 слов на английском - 80 % английского"],
@@ -360,11 +343,37 @@ def get_lesson(update, context):
                                       " а вы будете на них отвечать")
             sessionStorage[user_id]['test'] = get_test(user_id)
             sessionStorage[user_id]['anss_given'] = []
-            update.message.reply_text(sessionStorage[user_id]['test'][0][0])
+            update.message.reply_text(sessionStorage[user_id]['test'][0][0],
+                                      reply_markup=ReplyKeyboardMarkup([['завершить тест']], one_time_keyboard=True))
             sessionStorage[user_id]['test_stage'] = 1
             sessionStorage[user_id]['conv_stage'] = 5
             return 5
         if sessionStorage[user_id]['test_stage'] != -1:
+            if mes == 'завершить тест':
+                sessionStorage[user_id]['test_stage'] += 1
+                text = f"Вот результаты теста: \n"
+                score = 0
+                test = sessionStorage[user_id]['test']
+                for ans_id in range(len(sessionStorage[user_id]['anss_given'])):
+                    ans = sessionStorage[user_id]['anss_given'][ans_id].lower().strip()
+                    text += '\n' + str(ans_id + 1) + '. ' + test[ans_id][0]
+                    text += f"\nВаш ответ: {ans}"
+                    if ans == test[ans_id][1].lower().strip():
+                        text += '\nПравильно ✓'
+                        score += 1
+                    else:
+                        text += '\nНеправильно ❌'
+                        text += f"\nВот правильный ответ: {test[ans_id][1]}"
+                text = f"Тест закончен, ваш результат: {str(score)} из" \
+                           f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
+                update.message.reply_text(text)
+                sessionStorage[user_id]['test_stage'] = -1
+                update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест"
+                                          "\nВведите название любой темы, из выше перечисленных,"
+                                          " чтобы увидеть её содержание и продолжить обучение"
+                                          "\nВведите 'назад', чтобы попасть в личный кабинет",
+                                          reply_markup=themes_markup_beg_test)
+                return 5
             if sessionStorage[user_id]['test_stage'] == len(sessionStorage[user_id]['test']):
                 sessionStorage[user_id]['anss_given'].append(mes.lower().strip())
                 sessionStorage[user_id]['test_stage'] += 1
@@ -391,7 +400,8 @@ def get_lesson(update, context):
                                           "\nВведите 'назад', чтобы попасть в личный кабинет",
                                           reply_markup=themes_markup_beg_test)
                 return 5
-            update.message.reply_text(sessionStorage[user_id]['test'][sessionStorage[user_id]['test_stage']][0])
+            update.message.reply_text(sessionStorage[user_id]['test'][sessionStorage[user_id]['test_stage']][0],
+                                      reply_markup=ReplyKeyboardMarkup([['завершить тест']], one_time_keyboard=True))
             sessionStorage[user_id]['anss_given'].append(mes.lower().strip())
             sessionStorage[user_id]['test_stage'] += 1
             sessionStorage[user_id]['conv_stage'] = 5
@@ -760,7 +770,7 @@ def run_test(update, context):
             return 10
         else:
             update.message.reply_text(sessionStorage[user_id]['test'][sessionStorage[user_id]['test_stage']][0],
-                                  reply_markup=ReplyKeyboardMarkup([['завершить тест']], one_time_keyboard=True))
+                                      reply_markup=ReplyKeyboardMarkup([['завершить тест']], one_time_keyboard=True))
             sessionStorage[user_id]['anss_given'].append(mes.lower().strip())
             sessionStorage[user_id]['test_stage'] += 1
             return 10
