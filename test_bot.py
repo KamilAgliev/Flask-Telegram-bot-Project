@@ -4,7 +4,7 @@ from telegram.ext import CallbackContext, CommandHandler
 
 # Определяем функцию-обработчик сообщений.
 # У неё два параметра, сам бот и класс updater, принявший сообщение.
-from data.auth import TOKEN_FOR_TELEGRAM_BOT
+from data.telegram_bot_data import TOKEN_FOR_TELEGRAM_BOT
 data = {
     'in': 1
 }
