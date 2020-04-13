@@ -22,32 +22,6 @@ def log_user(user_id, given_password):
         return jsonify({"message": "something wrong"})
 
 
-class RegisterForm:
-    stages = [
-        "Введите своё имя",
-        "Введите свою фамилию",
-        "Введите ваш email",
-        "Придумайте пароль от аккаунта",
-        "Повторите пароль от аккаунта",
-        "Введите свой возраст",
-        "Введите ваш адрес проживания",
-        "Какова ваша цель изучения английского?"
-        "\n(путешествия, для работы за границей, разговорный)"
-        "\nМожете выбрать несколько, вводите их через запятую(,)."
-    ]
-
-    def __init__(self):
-        self.surname = ""
-        self.name = ""
-        self.email = ""
-        self.password = ""
-        self.password_again = ""
-        self.age = -1
-        self.address = ""
-        self.telegram_name = ""
-        self.aim = ""
-
-
 class UsersResource(Resource):
     def get(self, user_id):
         session = db_session.create_session()
@@ -108,7 +82,6 @@ class UsersListResource(Resource):
 
 if __name__ == "__main__":
     db_session.global_init('db/baza.db')
-
     api.add_resource(UsersListResource, '/api/users')
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
     app.run()

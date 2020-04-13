@@ -3,14 +3,12 @@ import random
 import requests
 from requests import post, get, delete
 from telegram import ReplyKeyboardMarkup
-from data import db_session
-from data.users import User
-from flask_server import RegisterForm
 from data.telegram_bot_data import TOKEN_FOR_TELEGRAM_BOT
 from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
 from telegram.ext import CommandHandler
 from data.telegram_bot_data import sessionStorage
 
+FLASK_SERVER = "http://localhost:5000"
 reply_keyboard = [["1000 слов на английском - 80 % английского"],
                   ["сериал Friends"],
                   ["Сериалы с субтитрами"],
@@ -40,7 +38,9 @@ reply_keyboard = [["Английский для туристов в дороге
                   ["Рекомендации для тех, кто хочет хорошо говорить на английском"],
                   ['назад']]
 themes_markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-reply_keyboard = [["Английский для туристов в дороге"],
+reply_keyboard = [['начать тест'],
+                  ['назад'],
+                  ["Английский для туристов в дороге"],
                   ["Английский в гостинице"],
                   ["Исследуем город"],
                   ["Английский для туристов в ресторане"],
@@ -54,9 +54,8 @@ reply_keyboard = [["Английский для туристов в дороге
                   ["Чтение на английском"],
                   ["Старый друг лучше новых двух?"],
                   ["Переносим всю свою жизнь на английский язык!"],
-                  ["Рекомендации для тех, кто хочет хорошо говорить на английском"],
-                  ['начать тест'],
-                  ['назад']]
+                  ["Рекомендации для тех, кто хочет хорошо говорить на английском"]
+                  ]
 themes_markup_beg_test = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 reply_keyboard = [['путешествия'],
                   ['для работы за границей'],
@@ -68,10 +67,36 @@ reply_keyboard = [['путешествия'],
 aims_markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
 
+class RegisterForm:
+    stages = [
+        "Введите своё имя",
+        "Введите свою фамилию",
+        "Введите ваш email",
+        "Придумайте пароль от аккаунта",
+        "Повторите пароль от аккаунта",
+        "Введите свой возраст",
+        "Введите ваш адрес проживания",
+        "Какова ваша цель изучения английского?"
+        "\n(путешествия, для работы за границей, разговорный)"
+        "\nМожете выбрать несколько, вводите их через запятую(,)."
+    ]
+
+    def __init__(self):
+        self.surname = ""
+        self.name = ""
+        self.email = ""
+        self.password = ""
+        self.password_again = ""
+        self.age = -1
+        self.address = ""
+        self.telegram_name = ""
+        self.aim = ""
+
+
 def register(update, context):
     mes = update.message.text.strip()
     user_id = update.message.from_user.id
-    res = get(f"http://localhost:5000/api/users/{user_id}").json()
+    res = get(f"{FLASK_SERVER}/api/users/{user_id}").json()
     if res["message"] == 'ok':
         update.message.reply_text("У вас уже есть аккаунт!")
         sessionStorage[user_id]["login_stage"] = 0
@@ -89,7 +114,9 @@ def register(update, context):
                                       "\nувидеть интересные ссылки для изучения анлийского,"
                                       "\nзнания тут закрепляються с помощью разных тестов по словам темы."
                                       "\nТакже у меня есть встроенный переводчик, который доступен в любой момент!"
-                                      "\nИзучать английский интресно и весело!Вперед!")
+                                      "\nИзучать английский интресно и весело! Вперед!")
+            update.message.reply_text("Для начала вам нужно зарегистрироваться",
+                                      reply_keyboard=ReplyKeyboardMarkup([], one_time_keyboard=True))
     stage = sessionStorage[user_id]['register_stage']
     if stage != len(RegisterForm.stages):
         if stage != 0:
@@ -117,7 +144,10 @@ def register(update, context):
                 sessionStorage[user_id]["reg_form"].age = int(mes)
             if stage == 7:
                 sessionStorage[user_id]["reg_form"].address = mes
-        update.message.reply_text(RegisterForm.stages[stage])
+        if stage == 7:
+            update.message.reply_text(RegisterForm.stages[stage], reply_markup=aims_markup)
+        else:
+            update.message.reply_text(RegisterForm.stages[stage])
         sessionStorage[user_id]['register_stage'] += 1
         return 1
     sessionStorage[user_id]["reg_form"].aim = ""
@@ -135,12 +165,13 @@ def register(update, context):
     sessionStorage[user_id]['reg_form'].aim = sessionStorage[user_id]['reg_form'].aim[:-1]
     data = sessionStorage[user_id]["reg_form"]
     a = True
+    nick = None
     try:
         nick = update.message.from_user.username
     except Exception:
         a = False
     if a:
-        res = post('http://localhost:5000/api/users', json={
+        res = post(f'{FLASK_SERVER}/api/users', json={
             'id': user_id,
             'name': data.name,
             'surname': data.surname,
@@ -152,7 +183,7 @@ def register(update, context):
             'telegram_name': nick,
         }).json()
     else:
-        res = post('http://localhost:5000/api/users', json={
+        res = post(f'{FLASK_SERVER}/api/users', json={
             'id': user_id,
             'name': data.name,
             'surname': data.surname,
@@ -165,7 +196,7 @@ def register(update, context):
         }).json()
     print(res)
     sessionStorage[user_id]["login_stage"] = 0
-    update.message.reply_text("Вы успешно зарегестрированы!")
+    update.message.reply_text("Вы успешно зарегистрированы!")
     return learning(update, context)
 
 
@@ -178,7 +209,7 @@ def login(update, context):
         return 2
     else:
         given_password = mes
-        res = get(f"http://localhost:5000/api/users/{user_id}").json()
+        res = get(f"{FLASK_SERVER}/api/users/{user_id}").json()
         if res['message'] == "ok":
             if res['user_data']['password'] == given_password:
                 sessionStorage[user_id]['login_stage'] = 0
@@ -194,9 +225,9 @@ def login(update, context):
 
 
 def start(update, context):
-    update.message.reply_text("Я работаю")
+    update.message.reply_text("Я работаю!")
     user_id = update.message.from_user.id
-    res = get(f"http://localhost:5000/api/users/{user_id}").json()
+    res = get(f"{FLASK_SERVER}/api/users/{user_id}").json()
     if res["message"] == 'ok':
         update.message.reply_text(
             "У вас уже есть аккаунт, \n"
@@ -208,10 +239,6 @@ def start(update, context):
             }
         return login(update, context)
     else:
-        update.message.reply_text(
-            "Здравствуйте, это бот "
-            "для изучения английского языка, \n"
-            "для начала вам нужно зарегистрироваться", reply_keyboard=ReplyKeyboardMarkup([], one_time_keyboard=True))
         return register(update, context)
 
 
@@ -267,7 +294,7 @@ def get_other_links(update, context):
 
 
 def get_people_to_chat(update, context):
-    res = get("http://localhost:5000/api/users").json()
+    res = get(f"{FLASK_SERVER}/api/users").json()
     text = "Вот люди, с которыми с ты можешь пообщаться." \
            "\nНайди их по никнейму, добавив в начало поиска '@'"
     leng = len(res['users'])
@@ -318,7 +345,7 @@ def get_lesson(update, context):
         sessionStorage[user_id]['lesson_stage'] = 0
         sessionStorage[user_id]['test_stage'] = -1
         sessionStorage[user_id]['section_info_checked'] = 0
-        sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+        sessionStorage[user_id]['user_data'] = get(f"{FLASK_SERVER}/api/users/{user_id}").json()['user_data']
         if sessionStorage[user_id]['user_data']['aim'][-1] == ',':
             sessionStorage[user_id]['user_data']['aim'] = sessionStorage[user_id]['user_data']['aim'][:-1]
 
@@ -409,7 +436,7 @@ def get_lesson(update, context):
             sessionStorage[user_id]['lesson_stage'] = 0
             sessionStorage[user_id]['test_stage'] = -1
             sessionStorage[user_id]['section_info_checked'] = 0
-            sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+            sessionStorage[user_id]['user_data'] = get(f"{FLASK_SERVER}/api/users/{user_id}").json()['user_data']
             if sessionStorage[user_id]['user_data']['aim'][-1] == ',':
                 sessionStorage[user_id]['user_data']['aim'] = sessionStorage[user_id]['user_data']['aim'][:-1]
 
@@ -458,7 +485,7 @@ def get_lesson(update, context):
                        "\n\nВведите 'назад', чтобы вернуть в личный кабинет" \
                        "\nВведите 'начать тест', чтобы начать тестирование по словам этой темы" \
                        '\nНапишите название любой темы их предложенных, чтобы увидеть информацию о ней'
-        update.message.reply_text(lesson_text, themes_markup_beg_test)
+        update.message.reply_text(lesson_text, reply_markup=themes_markup_beg_test)
     sessionStorage[user_id]['conv_stage'] = 5
     return 5
 
@@ -466,7 +493,7 @@ def get_lesson(update, context):
 def get_all_themes(update, context):
     from data.english_data import WORDS_FOR_LEARNING
     user_id = update.message.from_user.id
-    text = "Вот темы, любую из которых вы можете выбрать и изучить или сделать по ним тест:"
+    text = "Вот темы на выбор:"
     sections = sessionStorage[user_id]['user_data']['aim'].split(',')
     c = 1
     for section in sections:
@@ -492,8 +519,7 @@ def help_in_lesson(update, context):
 def change_aim(update, context):
     user_id = update.message.from_user.id
     mes = update.message.text.strip().lower()
-    from data.english_data import WORDS_FOR_LEARNING
-    user_data = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+    user_data = get(f"{FLASK_SERVER}/api/users/{user_id}").json()['user_data']
     if 'change_aim_stage' not in sessionStorage[user_id].keys():
         sessionStorage[user_id]['change_aim_stage'] = 0
     if sessionStorage[user_id]['change_aim_stage'] == 0:
@@ -511,14 +537,14 @@ def change_aim(update, context):
             if section not in ['путешествия', 'для работы за границей', 'разговорный']:
                 update.message.reply_text(
                     "Выберите цели из предложенных! (путешествия, для работы за границей, разговорный)."
-                    "\nЕсли целей много, то вводите их через пробел")
+                    "\nЕсли целей много, то вводите их через пробел", reply_markup=aims_markup)
                 return 6
             else:
                 sections += section + ','
         sections = sections[:-1]
-        deliting = delete(f"http://localhost:5000/api/users/{user_id}").json()
+        deliting = delete(f"{FLASK_SERVER}/api/users/{user_id}").json()
         print(deliting)
-        res = post('http://localhost:5000/api/users', json={
+        res = post(f'{FLASK_SERVER}/api/users', json={
             'id': user_id,
             'name': user_data['name'],
             'surname': user_data['surname'],
@@ -531,6 +557,7 @@ def change_aim(update, context):
         }).json()
         print(res)
         update.message.reply_text("Ваши разделы изучения успешно обновлёны!")
+        sessionStorage[user_id]['change_aim_stage'] = 0
         if 'lesson_stage' in sessionStorage[user_id].keys():
             sessionStorage[user_id]['lesson_stage'] = 0
         return learning(update, context)
@@ -566,7 +593,7 @@ def get_test(user_id):
 
 
 def get_myeng_map(update, context):
-    users = get(f"http://localhost:5000/api/users").json()['users']
+    users = get(f"{FLASK_SERVER}/api/users").json()['users']
     marks = ""
     for user in users:
         request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode" \
@@ -600,6 +627,7 @@ def get_myeng_map(update, context):
         # Телеграму можно передать прямо её, не скачивая предварительно карту.
         static_api_request,
         caption=f"Вот пользователи телеграм бота MyEng на карте!"
+        f"\n(возможно некоторых мы найти не смогли!)"
     )
 
 
@@ -665,7 +693,7 @@ def run_test(update, context):
     if mes.lower() == 'назад':
         sessionStorage[user_id]['test_stage'] = -1
         sessionStorage[user_id]['section_info_checked'] = 0
-        sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()[
+        sessionStorage[user_id]['user_data'] = get(f"{FLASK_SERVER}/api/users/{user_id}").json()[
             'user_data']
         if sessionStorage[user_id]['user_data']['aim'][-1] == ',':
             sessionStorage[user_id]['user_data']['aim'] = sessionStorage[user_id]['user_data']['aim'][:-1]
@@ -696,7 +724,7 @@ def run_test(update, context):
         return 10
     if 'test_stage' not in sessionStorage[user_id].keys():
         sessionStorage[user_id]['test_stage'] = -1
-        sessionStorage[user_id]['user_data'] = get(f"http://localhost:5000/api/users/{user_id}").json()['user_data']
+        sessionStorage[user_id]['user_data'] = get(f"{FLASK_SERVER}/api/users/{user_id}").json()['user_data']
         if sessionStorage[user_id]['user_data']['aim'][-1] == ',':
             sessionStorage[user_id]['user_data']['aim'] = sessionStorage[user_id]['user_data']['aim'][:-1]
 
@@ -780,6 +808,8 @@ def stop_test(update, context):
     text = f"Вот результаты теста: \n"
     score = 0
     test = sessionStorage[user_id]['test']
+    if len(sessionStorage[user_id]['anss_given']) == 0:
+        text = ""
     for ans_id in range(len(sessionStorage[user_id]['anss_given'])):
         ans = sessionStorage[user_id]['anss_given'][ans_id].lower().strip()
         text += '\n' + str(ans_id + 1) + '. ' + test[ans_id][0]
@@ -808,9 +838,10 @@ def unauthed(update, context):
 
 
 if __name__ == "__main__":
-    print(1)
-    db_session.global_init("db/baza.db")
-    updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True)
+    REQUEST_KWARGS = {
+        'proxy_url': 'socks5://localhost:9150',  # Адрес прокси сервера
+    }
+    updater = Updater(TOKEN_FOR_TELEGRAM_BOT, use_context=True, request_kwargs=REQUEST_KWARGS)
     dp = updater.dispatcher
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
