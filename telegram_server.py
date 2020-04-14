@@ -394,10 +394,10 @@ def get_lesson(update, context):
                            f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
                 update.message.reply_text(text)
                 sessionStorage[user_id]['test_stage'] = -1
-                update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест"
-                                          "\nВведите название любой темы, из выше перечисленных,"
-                                          " чтобы увидеть её содержание и продолжить обучение"
+                update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест",
                                           "\nВведите 'назад', чтобы попасть в личный кабинет",
+                                          "\nВведите название любой темы, из выше перечисленных,"
+                                          " чтобы увидеть её содержание и продолжить обучение",
                                           reply_markup=themes_markup_beg_test)
                 return 5
             if sessionStorage[user_id]['test_stage'] == len(sessionStorage[user_id]['test']):
@@ -456,9 +456,8 @@ def get_lesson(update, context):
                     sessionStorage[user_id]['curr_lesson'] = lesson
                     break
         if lesson is None:
-            update.message.reply_text("Введите существующую тему!")
+            update.message.reply_text("Введите существующую тему!", reply_markup=themes_markup_beg_test)
             get_all_themes(update, context)
-            update.message.reply_text(reply_markup=themes_markup_beg_test)
             return 5
         lesson_text = f"Вот ваш урок. " \
             f"\n1. Оглавление: {lesson['title']}"
@@ -693,8 +692,7 @@ def run_test(update, context):
     if mes.lower() == 'назад':
         sessionStorage[user_id]['test_stage'] = -1
         sessionStorage[user_id]['section_info_checked'] = 0
-        sessionStorage[user_id]['user_data'] = get(f"{FLASK_SERVER}/api/users/{user_id}").json()[
-            'user_data']
+        sessionStorage[user_id]['user_data'] = get(f"{FLASK_SERVER}/api/users/{user_id}").json()[ 'user_data']
         if sessionStorage[user_id]['user_data']['aim'][-1] == ',':
             sessionStorage[user_id]['user_data']['aim'] = sessionStorage[user_id]['user_data']['aim'][:-1]
         return learning(update, context)
@@ -872,10 +870,10 @@ if __name__ == "__main__":
             7: [MessageHandler(Filters.text, talk_to_alice)],  # dialog with Alice
             8: [CommandHandler("FromEngToRUS", switch_to_from_en_to_ru),
                 CommandHandler("FromRusToEng", switch_to_from_ru_to_en),
-                MessageHandler(Filters.text, from_ru_to_en)],
+                MessageHandler(Filters.text, from_ru_to_en)],# translate from ru to en
             9: [CommandHandler("FromEngToRUS", switch_to_from_en_to_ru),
                 CommandHandler("FromRusToEng", switch_to_from_ru_to_en),
-                MessageHandler(Filters.text, from_en_to_ru)],
+                MessageHandler(Filters.text, from_en_to_ru)],# translate from en to ru
             10: [MessageHandler(Filters.text, run_test), CommandHandler("stop_test", stop_test)]
         }
     )
