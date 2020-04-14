@@ -6,7 +6,7 @@ from data.db_session import SqlAlchemyBase
 class Question(SqlAlchemyBase):
     __tablename__ = 'questions'
 
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     theme = sqlalchemy.Column(sqlalchemy.String)  # тема вопроса
-    ru = sqlalchemy.Column(sqlalchemy.String)  # на русском
-    en = sqlalchemy.Column(sqlalchemy.String)  # на английском
+    text = sqlalchemy.Column(sqlalchemy.String)  # на русском
+    ans = sqlalchemy.Column(sqlalchemy.String)  # на английском

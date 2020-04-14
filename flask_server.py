@@ -4,6 +4,7 @@ import datetime
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
 from data import db_session
+from data.tests import Test
 from data.users import User
 
 app = Flask(__name__)
@@ -80,8 +81,24 @@ class UsersListResource(Resource):
         return jsonify({'success': 'OK - the user has been added'})
 
 
+class TestsResource(Resource):
+    def get(self, theme, user_id):
+        session = db_session.create_session()
+        tests = session.query(Test).filter(Test.theme == theme).all()
+        if len(tests) == 0:
+            return jsonify({"error": "no such tests"})
+        for i in range(len(tests)):
+            if str(user_id) not in tests[i].passed_users.split(','):
+                tests[i].passed_users += str(user_id) + ','
+                curr_test = []
+
+                return jsonify({'test': curr_test, "message": "ok"})
+        return jsonify({"error": "all existing test are passed"})
+
+
 if __name__ == "__main__":
     db_session.global_init('db/baza.db')
     api.add_resource(UsersListResource, '/api/users')
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
+    api.add_resource(TestsResource, '/api/tests/<string:theme>/<int:user_id>')
     app.run()
