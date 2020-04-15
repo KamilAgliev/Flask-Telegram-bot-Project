@@ -577,8 +577,8 @@ def get_test(user_id):
     from data.english_data import WORDS_FOR_LEARNING
     section = sessionStorage[user_id]['curr_section']
     theme = sessionStorage[user_id]['curr_lesson']['title']
-    res = get(f"{FLASK_SERVER}/api/{theme}/{user_id}").json()
-    if 'error' not in res:
+    res = get(f"{FLASK_SERVER}/api/tests/{theme}/{user_id}").json()
+    if 'error' in res:
         words = []
         for les in WORDS_FOR_LEARNING[section]['themes']:
             if les['title'] == theme:
@@ -588,7 +588,7 @@ def get_test(user_id):
         test = []
         if 'curr_q_id' not in sessionStorage.keys():
             sessionStorage["curr_q_id"] = 1
-        questions = "",
+        questions = ""
         passed_users = str(user_id)
         curr_q_id = sessionStorage['curr_q_id']
         for i in range(len(sam)):
@@ -602,12 +602,6 @@ def get_test(user_id):
                 text = ru + '\n' + "Как сказать это на английском?"
                 ans = en
             test.append([text, ans])
-            question = Question(
-                id=curr_q_id,
-                text=text,
-                ans=ans,
-                theme=theme
-            )
             from requests import post
             ques_adding = post(f"{FLASK_SERVER}/api/questions", json={
                 "id": curr_q_id,
@@ -629,13 +623,11 @@ def get_test(user_id):
         return test
     else:
         test = []
-        for question_id in res['test']['questions'].split():
+        for question_id in res['test']['questions'].split(','):
             ques = get(f"{FLASK_SERVER}/api/questions/{question_id}").json()['question']
             text = ques['text']
             ans = ques['ans']
             test.append([text, ans])
-        user_passing = put(f"{FLASK_SERVER}/api/tests/<int:test_id>/<int:user_id>").json()
-        print(user_passing)
         return test
 
 
@@ -808,7 +800,7 @@ def run_test(update, context):
                                       " поэтому здесь нет слов для теста", reply_markup=themes_markup_beg_test)
             return 10
         update.message.reply_text("Сейчас мы зададим вам несколько вопросов,"
-                                  " а вы будете на них отвечать")
+                                  " а вы будете на них отвечать. \n Пожалуйста подождите пока сгенерируеться тест")
         sessionStorage[user_id]['test'] = get_test(user_id)
         sessionStorage[user_id]['anss_given'] = []
         update.message.reply_text(sessionStorage[user_id]['test'][0][0],
@@ -929,3 +921,4 @@ if __name__ == "__main__":
     dp.add_handler(MessageHandler(Filters.text, unauthed))
     updater.start_polling()
     updater.idle()
+

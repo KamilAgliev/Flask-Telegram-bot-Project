@@ -8,7 +8,7 @@ from sqlalchemy_serializer import SerializerMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
-class User(SqlAlchemyBase):
+class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, index=True)
@@ -20,4 +20,3 @@ class User(SqlAlchemyBase):
     telegram_name = sqlalchemy.Column(sqlalchemy.String)
     aim = sqlalchemy.Column(sqlalchemy.String)
     password = sqlalchemy.Column(sqlalchemy.String)
-    

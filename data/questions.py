@@ -1,9 +1,11 @@
 import sqlalchemy
-from sqlalchemy import orm
+from flask_login import UserMixin
+from sqlalchemy_serializer import SerializerMixin
+
 from data.db_session import SqlAlchemyBase
 
 
-class Question(SqlAlchemyBase):
+class Question(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'questions'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)

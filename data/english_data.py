@@ -124,7 +124,7 @@ WORDS_FOR_LEARNING = {
                  ['beautiful ', 'красивый'],
                  ['crowded ', 'переполненный'],
                  ['packed with tourist ', 'забит туристами'],
-                 ['lovely ', 'милый, чудный'],
+                 ['lovely ', 'милый'],
                  ['unique ', 'уникальный'],
                  ['spectacular ', 'захватывающий'],
                  ['picturesque ', 'красочный'],
