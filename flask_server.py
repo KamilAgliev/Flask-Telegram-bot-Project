@@ -150,7 +150,6 @@ if __name__ == "__main__":
     db_session.global_init('db/baza.db')
     api.add_resource(UsersListResource, '/api/users')
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
-
     api.add_resource(TestsResource, '/api/tests/<string:theme>/<int:user_id>')
     api.add_resource(TestsListResource, '/api/tests')
     api.add_resource(QuestionListResource, '/api/questions')

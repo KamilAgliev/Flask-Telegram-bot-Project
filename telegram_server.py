@@ -1,5 +1,7 @@
 """MyEng - Телеграм бот для узучения английского языка"""
 import random
+import sys
+
 import requests
 from requests import post, get, delete, put
 from telegram import ReplyKeyboardMarkup
@@ -328,10 +330,10 @@ def get_section_info(update, context):
     aim = sessionStorage[user_id]['user_data']['aim'].split(',')
     for section in aim:
         text += f"\n{curr_section}. {section[0].upper()}{section[1:]}." \
-                f"\n\nНемного предисловия к разделу:" \
-                f"\n{WORDS_FOR_LEARNING[section]['inception']}" \
-                f"\n\nВот обобщение о разделе: " \
-                f"\n{WORDS_FOR_LEARNING[section]['conclusion']}"
+            f"\n\nНемного предисловия к разделу:" \
+            f"\n{WORDS_FOR_LEARNING[section]['inception']}" \
+            f"\n\nВот обобщение о разделе: " \
+            f"\n{WORDS_FOR_LEARNING[section]['conclusion']}"
         curr_section += 1
         text += '\n'
     text += '\nПолностью прочитайте выше сказанное, вы больше не увидите эту информацию'
@@ -394,7 +396,7 @@ def get_lesson(update, context):
                         text += '\nНеправильно ❌'
                         text += f"\nВот правильный ответ: {test[ans_id][1]}"
                 text = f"Тест закончен, ваш результат: {str(score)} из" \
-                       f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
+                           f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
                 update.message.reply_text(text)
                 sessionStorage[user_id]['test_stage'] = -1
                 update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест",
@@ -420,7 +422,7 @@ def get_lesson(update, context):
                         text += '\nНеправильно ❌'
                         text += f"\nВот правильный ответ: {test[ans_id][1]}"
                 text = f"Тест закончен, ваш результат: {str(score)} из" \
-                       f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
+                           f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
                 update.message.reply_text(text)
                 sessionStorage[user_id]['test_stage'] = -1
                 update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест"
@@ -463,7 +465,7 @@ def get_lesson(update, context):
             get_all_themes(update, context)
             return 5
         lesson_text = f"Вот ваш урок. " \
-                      f"\n1. Оглавление: {lesson['title']}"
+            f"\n1. Оглавление: {lesson['title']}"
         if len(lesson['youtube_urls']) != 0:
             mnozh = 'a'
             if len(lesson['youtube_urls']) > 1:
@@ -481,7 +483,7 @@ def get_lesson(update, context):
                 lesson_text += f'\n{exsample[0]} -> \n{exsample[1]}'
         if len(lesson['description']):
             lesson_text += f"\n\nДополнительная информация:" \
-                           f"\n{lesson['description']}"
+                f"\n{lesson['description']}"
         lesson_text += '\n\nНе пугайтесь большого объёма информации, потратьте столько времени,' \
                        ' сколько нужно, чтобы овладеть темой.' \
                        "\n\nВведите 'назад', чтобы вернуть в личный кабинет" \
@@ -526,7 +528,7 @@ def change_aim(update, context):
         sessionStorage[user_id]['change_aim_stage'] = 0
     if sessionStorage[user_id]['change_aim_stage'] == 0:
         text = f'Выберите цели изучения английского\n(путешествия, для работы за границей, разговорный),' \
-               f'\nесли их несколько, то вводите через запятую(,)'
+            f'\nесли их несколько, то вводите через запятую(,)'
         update.message.reply_text(text, reply_markup=aims_markup)
         sessionStorage[user_id]['change_aim_stage'] += 1
         return 6
@@ -563,14 +565,6 @@ def change_aim(update, context):
         if 'lesson_stage' in sessionStorage[user_id].keys():
             sessionStorage[user_id]['lesson_stage'] = 0
         return learning(update, context)
-
-
-def talk_to_alice(update, context):
-    mes = update.message.text.strip()
-    if mes.lower() == 'назад':
-        return learning(update, context)
-    update.message.reply_text("тип я поговорил, PTK привет")
-    return learning(update, context)
 
 
 def get_test(user_id):
@@ -636,7 +630,7 @@ def get_myeng_map(update, context):
     marks = ""
     for user in users:
         request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode" \
-                  f"={user['address']}&format=json"
+            f"={user['address']}&format=json"
         response = requests.get(request)
         if not response:
             continue
@@ -659,14 +653,14 @@ def get_myeng_map(update, context):
     if len(users) == 1:
         Zend = "&z=2"
     static_api_request = f"http://static-maps.yandex.ru/1.x/?" \
-                         f"l=map&apikey=40d1649f-0493-4b70-98ba-98533de7710b&pt={marks[:-1]}" + Zend
+                             f"l=map&apikey=40d1649f-0493-4b70-98ba-98533de7710b&pt={marks[:-1]}" + Zend
     context.bot.send_photo(
         update.message.chat_id,  # Идентификатор чата. Куда посылать картинку.
         # Ссылка на static API, по сути, ссылка на картинку.
         # Телеграму можно передать прямо её, не скачивая предварительно карту.
         static_api_request,
         caption=f"Вот пользователи телеграм бота MyEng на карте!"
-                f"\n(возможно некоторых мы найти не смогли!)"
+        f"\n(возможно некоторых мы найти не смогли!)"
     )
 
 
@@ -752,7 +746,7 @@ def run_test(update, context):
                 text += '\nНеправильно ❌'
                 text += f"\nВот правильный ответ: {test[ans_id][1]}"
         text = f"Тест закончен, ваш результат: {str(score)} из" \
-               f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
+                   f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
         update.message.reply_text(text)
         sessionStorage[user_id]['test_stage'] = -1
         update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест"
@@ -825,7 +819,7 @@ def run_test(update, context):
                     text += '\nНеправильно ❌'
                     text += f"\nВот правильный ответ: {test[ans_id][1]}"
             text = f"Тест закончен, ваш результат: {str(score)} из" \
-                   f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
+                       f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
             update.message.reply_text(text)
             sessionStorage[user_id]['test_stage'] = -1
             update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест"
@@ -859,7 +853,7 @@ def stop_test(update, context):
             text += '\nНеправильно ❌'
             text += f"\nВот правильный ответ: {test[ans_id][1]}"
     text = f"Тест закончен, ваш результат: {str(score)} из" \
-           f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
+               f" {len(sessionStorage[user_id]['anss_given'])}\n" + text
     update.message.reply_text(text)
     sessionStorage[user_id]['test_stage'] = -1
     update.message.reply_text("Введите 'начать тест', чтобы пройти ещё один тест"
@@ -876,6 +870,11 @@ def unauthed(update, context):
 
 
 if __name__ == "__main__":
+    flask_server = sys.argv[1]
+    if flask_server[-1] == '/':
+        flask_server = flask_server[:-1]
+    print(f"Flask Server url was given: {flask_server}")
+    FLASK_SERVER = sys.argv[1]
     REQUEST_KWARGS = {
         'proxy_url': 'socks5://localhost:9150',  # Адрес прокси сервера
     }
@@ -907,7 +906,6 @@ if __name__ == "__main__":
                 CommandHandler("return_to_cabinet", return_to_cabinet),
                 MessageHandler(Filters.text, get_lesson)],  # lesson
             6: [MessageHandler(Filters.text, change_aim)],  # aim changing
-            7: [MessageHandler(Filters.text, talk_to_alice)],  # dialog with Alice
             8: [CommandHandler("FromEngToRUS", switch_to_from_en_to_ru),
                 CommandHandler("FromRusToEng", switch_to_from_ru_to_en),
                 MessageHandler(Filters.text, from_ru_to_en)],  # translate from ru to en
@@ -921,4 +919,3 @@ if __name__ == "__main__":
     dp.add_handler(MessageHandler(Filters.text, unauthed))
     updater.start_polling()
     updater.idle()
-
