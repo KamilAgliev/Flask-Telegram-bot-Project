@@ -3,6 +3,8 @@
 import random
 import sys
 
+from . import config
+import config
 import requests
 from requests import post, get, delete, put
 from telegram import ReplyKeyboardMarkup
