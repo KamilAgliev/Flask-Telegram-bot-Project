@@ -4,10 +4,10 @@ from flask import jsonify
 import datetime
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
-from data import db_session
-from data.questions import Question
-from data.tests import Test
-from data.users import User
+from .data import db_session
+from .data.questions import Question
+from .data.tests import Test
+from .data.users import User
 
 app = Flask(__name__)
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
