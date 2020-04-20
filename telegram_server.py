@@ -6,11 +6,10 @@ import sys
 import requests
 from requests import post, get, delete, put
 from telegram import ReplyKeyboardMarkup
-from .data.auth import sessionStorage
-from .data.questions import Question
+from .data import *
 from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
 from telegram.ext import CommandHandler
-from .data.tests import Test
+
 
 FLASK_SERVER = "http://localhost:5000"
 reply_keyboard = [["1000 слов на английском - 80 % английского"],
