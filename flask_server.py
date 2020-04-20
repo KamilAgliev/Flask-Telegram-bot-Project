@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """MyEng - Телеграм бот для узучения английского языка"""
-from data.users import User
+from .data.users import User
 from data.questions import Question
 from data.tests import Test
 from data.db_session import create_session, global_init
