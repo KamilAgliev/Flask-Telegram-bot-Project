@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 """MyEng - Телеграм бот для узучения английского языка"""
-from __future__ import absolute_import
-from . import data
-from data import *
+
+from data.auth import TOKEN_FOR_TELEGRAM_BOT 
+from data.auth import sessionStorage
+from data.commands import commands 
+from data.english_data import WORDS_FOR_LEARNING 
+from data.english_data import other_links  
+from data.english_data import sections
+
+
+
 
 import random
 import sys
-from . import config
-import config
 import requests
 from requests import post, get, delete, put
 from telegram import ReplyKeyboardMarkup
@@ -263,7 +268,6 @@ def logout(update, context):
 
 
 def learning_help(update, context):
-    from data.commands import commands
     text = """"""
     for com in commands['learning_menu']:
         text += com + '\n'
@@ -272,7 +276,6 @@ def learning_help(update, context):
 
 
 def get_other_links(update, context):
-    from data.english_data import other_links
     user_id = update.message.from_user.id
     mes = update.message.text.strip()
     if mes == 'назад':
@@ -324,7 +327,6 @@ def get_people_to_chat(update, context):
 
 
 def get_section_info(update, context):
-    from data.english_data import WORDS_FOR_LEARNING
     user_id = update.message.from_user.id
     curr_section = 1
     text = "Вот информация о разделах, которые вы изучаете." \
@@ -504,7 +506,6 @@ def get_lesson(update, context):
 
 
 def get_all_themes(update, context):
-    from data.english_data import WORDS_FOR_LEARNING
     user_id = update.message.from_user.id
     text = "Вот темы на выбор:"
     sections = sessionStorage[user_id]['user_data']['aim'].split(',')
@@ -521,7 +522,6 @@ def get_all_themes(update, context):
 
 
 def help_in_lesson(update, context):
-    from data.commands import commands
     text = """"""
     for com in commands['lesson_menu']:
         text += com + '\n'
@@ -577,7 +577,6 @@ def change_aim(update, context):
 
 
 def get_test(user_id):
-    from data.english_data import WORDS_FOR_LEARNING
     section = sessionStorage[user_id]['curr_section']
     theme = sessionStorage[user_id]['curr_lesson']['title']
     res = get(f"{FLASK_SERVER}/api/tests/{theme}/{user_id}").json()
