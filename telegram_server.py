@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """MyEng - Телеграм бот для узучения английского языка"""
 import random
 import sys
