@@ -3,7 +3,7 @@
 from data.users import User
 from data.questions import Question
 from data.tests import Test
-from data.db_session create_session, global_init
+from data.db_session import create_session, global_init
 
 from flask import jsonify
 import datetime
