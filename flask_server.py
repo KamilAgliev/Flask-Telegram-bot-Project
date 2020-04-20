@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """MyEng - Телеграм бот для узучения английского языка"""
-from __future__ import absolute_import
-from . import data
-from data import *
+from data.users import User
+from data.questions import Question
+from data.tests import Test
+from data.db_session create_session, global_init
 
 from flask import jsonify
 import datetime
@@ -17,7 +18,7 @@ api = Api(app)
 
 
 def log_user(user_id, given_password):
-    ses = db_session.create_session()
+    ses = create_session()
     user = ses.query(User).filter(User.id == user_id).first()
     if user and user.check_password(given_password):
         return jsonify({"message": 'ok'})
@@ -27,14 +28,14 @@ def log_user(user_id, given_password):
 
 class UsersResource(Resource):
     def get(self, user_id):
-        session = db_session.create_session()
+        session = create_session()
         user = session.query(User).filter(User.id == user_id).first()
         if not user:
             return jsonify({"message": "such user does not exist"})
         return jsonify({'user_data': user.to_dict(), "message": "ok"})
 
     def delete(self, user_id):
-        session = db_session.create_session()
+        session = create_session()
         user = session.query(User).filter(User.id == user_id).first()
         if not user:
             return jsonify({"message": "such user does not exist"})
@@ -56,14 +57,14 @@ class UsersListResource(Resource):
     parser.add_argument('aim')
 
     def get(self):
-        session = db_session.create_session()
+        session = create_session()
         users = session.query(User).all()
         return jsonify({'users': [item.to_dict() for item in users]})
 
     def post(self):
         args = UsersListResource.parser.parse_args()
         attributes = ['surname', 'name', 'age', 'address', 'email', 'telegram_name', 'aim']
-        session = db_session.create_session()
+        session = create_session()
         exist = session.query(User).filter(User.id == args['id']).first()
         if exist:
             return jsonify({"message": "such user already exists"})
@@ -92,7 +93,7 @@ class QuestionListResource(Resource):
 
     def post(self):
         args = QuestionListResource.parser.parse_args()
-        session = db_session.create_session()
+        session = create_session()
         ques = Question(
             id=args['id'],
             theme=args['theme'],
@@ -106,7 +107,7 @@ class QuestionListResource(Resource):
 
 class QuestionResource(Resource):
     def get(self, ques_id):
-        session = db_session.create_session()
+        session = create_session()
         ques = session.query(Question).filter(Question.id == ques_id).first()
         if not ques:
             return jsonify({"error": "such question does not exist"})
@@ -121,7 +122,7 @@ class TestsListResource(Resource):
     parser.add_argument('passed_users')
 
     def post(self):
-        session = db_session.create_session()
+        session = create_session()
         args = TestsListResource.parser.parse_args()
         test = Test(
             id=args['id'],
@@ -136,7 +137,7 @@ class TestsListResource(Resource):
 
 class TestsResource(Resource):
     def get(self, theme, user_id):
-        session = db_session.create_session()
+        session = create_session()
         tests = session.query(Test).filter(Test.theme == theme).all()
         if len(tests) == 0:
             return jsonify({"error": "no such test"})
@@ -148,7 +149,7 @@ class TestsResource(Resource):
 
 
 if __name__ == "__main__":
-    db_session.global_init('db/baza.db')
+    global_init('db/baza.db')
     api.add_resource(UsersListResource, '/api/users')
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
     api.add_resource(TestsResource, '/api/tests/<string:theme>/<int:user_id>')
