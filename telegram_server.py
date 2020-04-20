@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """MyEng - Телеграм бот для узучения английского языка"""
+from __future__ import absolute_import
+from . import data
+from data import *
+
 import random
 import sys
-
 from . import config
 import config
 import requests
-from __future__ import absolute_import
-from . import data
 from requests import post, get, delete, put
 from telegram import ReplyKeyboardMarkup
-from data import *
 from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
 from telegram.ext import CommandHandler
 
