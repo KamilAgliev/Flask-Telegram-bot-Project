@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """MyEng - Телеграм бот для узучения английского языка"""
 from flask import jsonify
 import datetime
