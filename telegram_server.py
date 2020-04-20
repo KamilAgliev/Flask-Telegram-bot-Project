@@ -6,9 +6,11 @@ import sys
 from . import config
 import config
 import requests
+from __future__ import absolute_import
+from . import data
 from requests import post, get, delete, put
 from telegram import ReplyKeyboardMarkup
-from .data import *
+from data import *
 from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
 from telegram.ext import CommandHandler
 
