@@ -372,6 +372,13 @@ def get_lesson(update, context):
         sessionStorage[user_id]['lesson_stage'] += 1
     elif sessionStorage[user_id]['lesson_stage'] == 1:
         if mes.lower() == 'начать тест':
+          if sessionStorage[user_id]['curr_section'] == 'разговорный':
+                  update.message.reply_text(
+                  "Это разговорный раздел, здесь нет тестов!\nЧтобы увидеть информацию по какой-либо теме, напишите её.(строго как в сообщении)"¶
+                  "\nВы также можете написать 'назад' для возвращения в личный кабинет",
+                  reply_markup=themes_markup)
+                  get_all_themes(update, context)
+                  return 5
             update.message.reply_text("Сейчас мы зададим вам несколько вопросов,"
                                       " а вы будете на них отвечать")
             sessionStorage[user_id]['test'] = get_test(user_id)
